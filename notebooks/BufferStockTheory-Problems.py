@@ -34,7 +34,6 @@
 # If you are not familiar with the HARK toolkit, browse [the documentation](https://hark.readthedocs.io).   
 #
 # For fast (local) execution of notebooks like this, refer to the [QUICK START GUIDE](https://github.com/econ-ark/HARK/blob/master/README.md).  
-#
 
 # %%
 # This cell does some setup; please be patient, it may take 3-5 minutes
@@ -102,7 +101,7 @@ def in_ipynb():
 
 if in_ipynb():
     # Now install stuff aside from LaTeX (if not already installed)
-    os.system('pip install econ-ark>=10.2')
+    os.system('pip install econ-ark')
     os.system('pip install matplotlib')
     os.system('pip install numpy')
     os.system('pip install scipy')
@@ -111,7 +110,6 @@ if in_ipynb():
     os.system('pip install jupyter_contrib_nbextensions')
     os.system('jupyter contrib nbextension install --user')
     os.system('jupyter nbextension enable codefolding/main')
-#    os.system('jupyter nbextension enable load_tex_macros/main')
     os.system('pip install cite2c')
     os.system('python -m cite2c.install')
 else:
@@ -132,12 +130,17 @@ from matplotlib import rc
 
 plt.rc('font', family='serif')
 plt.rc('text', usetex=iflatexExists)
-
 if iflatexExists:
-    latexdefs_path=os.getcwd()+'/latexdefs.tex' # If latexdefs exist, tell matplotlib about them
-    if os.path.exists(latexdefs_path): 
-        plt.rcParams['text.latex.preamble'] = r'\input{'+os.getcwd()+r'/latexdefs}'
-
+    latex_preamble = r'\usepackage{amsmath}\usepackage{amsfonts}\usepackage[T1]{fontenc}'
+    from os import path
+    latexdefs_path = os.getcwd()+'/latexdefs.tex'
+    if path.isfile(latexdefs_path):
+        latex_preamble = latex_preamble+r'\input{'+latexdefs_path+r'}'
+    else: # the required latex_envs package needs this file to exist even if it is empty
+        from pathlib import Path
+        Path(latexdefs_path).touch()
+    plt.rcParams['text.latex.preamble'] = latex_preamble
+    
 # The warnings package allows us to ignore some harmless but alarming warning messages
 import warnings
 warnings.filterwarnings("ignore")
@@ -160,7 +163,7 @@ Generator=False # Is this notebook the master or is it generated?
 if Generator:
     my_file_path = os.path.dirname(os.path.abspath("BufferStockTheory.ipynb")) # Find pathname to this file:
     Figures_HARK_dir = os.path.join(my_file_path,"Figures/") # LaTeX document assumes figures will be here
-    Figures_HARK_dir = os.path.join(my_file_path,"/tmp/Figures/") # Uncomment to make figures outside of git path
+#    Figures_HARK_dir = os.path.join(my_file_path,"/tmp/Figures/") # Uncomment to make figures outside of git path
     if not os.path.exists(Figures_HARK_dir):
         os.makedirs(Figures_HARK_dir)
         
@@ -499,7 +502,7 @@ mSSfunc = lambda m : 1 + (m-1)*(Er/ER)
 #
 # In doing this, it will be useful to know that the GIF is calculated in the $\texttt{checkConditions}$ method.  (Look in $\texttt{ConsIndShockModel.py}$).
 
-# %%
+# %% {"hidden": true}
 # Plot GICFailExample consumption function against the sustainable level of consumption
 
 GICFailExample.solve() # Above, we set up the problem but did not solve it 
@@ -516,7 +519,11 @@ plt.text(0,1.63,"$c$",fontsize = 26)
 plt.text(5.55,0,"$m$",fontsize = 26)
 plt.tick_params(labelbottom=False, labelleft=False,left='off',right='off',bottom='off',top='off')
 plt.text(1,0.6,"$c(m_{t})$",fontsize = 18)
-plt.text(1.5,1.2,"$\mathsf{E}_{t}[\Delta m_{t+1}] = 0$",fontsize = 18)
+if iflatexExists:
+    plt.text(1.5,1.2,"$\mathbb{E}_{t}[\Delta m_{t+1}] = 0$",fontsize = 22)
+else:
+    plt.text(1.5,1.2,"$\mathsf{E}_{t}[\Delta m_{t+1}] = 0$",fontsize = 22)
+
 plt.arrow(0.98,0.62,-0.2,0,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
 plt.arrow(2.2,1.2,0.3,-0.05,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
 if Generator:
@@ -533,16 +540,17 @@ if not in_ipynb():
 else:
     plt.show(block=True) # Change to False if you want to run uninterrupted
 
-# %% [markdown]
+# %% [markdown] {"hidden": true}
 # As a foundation for the remaining figures, we define another instance of the class $\texttt{IndShockConsumerType}$, which has the same parameter values as the instance $\texttt{baseEx}$ defined previously but is solved to convergence (our definition of an infinite horizon agent type)
 #
 
-# %%
+# %% {"hidden": true}
 # cycles=0 tells the solver to find the infinite horizon solution
 baseEx_inf = IndShockConsumerType(cycles=0,**base_params)
 
 baseEx_inf.solve()
 baseEx_inf.unpackcFunc()
+
 
 # %% [markdown]
 # ### [Target $m$, Expected Consumption Growth, and Permanent Income Growth](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#AnalysisoftheConvergedConsumptionFunction)
@@ -708,15 +716,22 @@ arrowplot(ax, m2,growth2, direc='pos')
 
 # Plot the target m
 ax.plot([baseEx_inf.solution[0].mNrmSS,baseEx_inf.solution[0].mNrmSS],[0,1.4],color="black",linestyle="--")
-ax.set_xlim(1,2.05)
+ax.set_xlim(1,2.10)
 ax.set_ylim(0.98,1.08)
 ax.text(1,1.082,"Growth Rate",fontsize = 26,fontweight='bold')
-ax.text(2.055,0.98,"$m_{t}$",fontsize = 26,fontweight='bold')
-ax.text(1.9,1.01,"$\mathsf{E}_{t}[c_{t+1}/c_{t}]$",fontsize = 22,fontweight='bold')
-ax.text(baseEx_inf.solution[0].mNrmSS,0.975, r'$\check{m}$', fontsize = 26,fontweight='bold')
+ax.text(2.105,0.975,"$m_{t}$",fontsize = 26,fontweight='bold')
+if iflatexExists:
+    ax.text(1.91,1.01,"$\mathbb{E}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}]$",fontsize = 22,fontweight='bold')
+else:
+    ax.text(1.91,1.01,"$\mathsf{E}_{t}[c_{t+1}/c_{t}]$",fontsize = 22,fontweight='bold')
+ax.text(baseEx_inf.solution[0].mNrmSS-0.02,0.974, r'$\check{m}$', fontsize = 26,fontweight='bold')
 ax.tick_params(labelbottom=False, labelleft=False,left='off',right='off',bottom='off',top='off')
-ax.text(1.9,0.998,r'$\Phi = (\mathrm{\mathsf{R}}\beta)^{1/\rho}$',fontsize = 22,fontweight='bold')
-ax.text(1.9,1.03, r'$\Gamma$',fontsize = 22,fontweight='bold')
+if iflatexExists:
+    ax.text(1.91,0.998,r'$\pmb{\text{\TH}} = (\mathrm{\mathsf{R}}\beta)^{1/\rho}$',fontsize = 22,fontweight='bold')
+else:
+    ax.text(1.91,0.998,r'$\Phi = (\mathrm{\mathsf{R}}\beta)^{1/\rho}$',fontsize = 22,fontweight='bold')
+
+ax.text(1.91,1.03, r'$\Gamma$',fontsize = 22,fontweight='bold')
 if Generator:
     fig.savefig(os.path.join(Figures_HARK_dir, 'cGroTargetFig.png'))
     fig.savefig(os.path.join(Figures_HARK_dir, 'cGroTargetFig.jpg'))
@@ -733,7 +748,7 @@ else:
 # [The next figure](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#cFuncBounds)
 # illustrates theoretical bounds for the consumption function.
 #
-# We define two useful variables: lower bound of $\kappa$ (marginal propensity to consume) and limit of $h$ (Human wealth), along with some functions such as limiting perfect foresight consumption functions ($\bar{c}(m)$), $\bar{\bar c}(m)$ and $\underline{c}(m)$.
+# We define two useful variables: lower bound of $\kappa$ (marginal propensity to consume) and limit of $h$ (Human wealth), along with some functions such as the limiting perfect foresight consumption function $\bar{c}(m)$, the upper bound function $\bar{\bar c}(m)$, and the lower bound function \underline{_c_}$(m)$.
 
 # %%
 # Define k_lower, h_inf and perfect foresight consumption function, upper bound of consumption function and lower
@@ -751,10 +766,10 @@ intersect_m = ((h_inf-1)* k_lower)/((1 - baseEx_inf.UnempPrb
 # Plot the consumption function and its bounds
 
 cMaxLabel=r'$\overline{c}(m) = (m-1+h)\underline{\kappa}$'
-cMinLabel=r'$\underline{c}(m)= (1-\Phi_{R})m = \underline{\kappa}m$'
+cMinLabel=r'$\underline{c}(m)= (1-\pmb{\text{\TH}}_{R})\underline{\kappa}m$'
 if not iflatexExists:
-    cMaxLabel=r'$\overline{c}(m) = (m-1+h)$κ̲' # Use unicode kludge
-    cMinLabel=r'c̲$(m)= (1-\Phi_{R})m = $κ̲$ m$' 
+    cMaxLabel=r'$\overline{c}(m) = (m-1+h)κ̲' # Use unicode kludge
+    cMinLabel=r'c̲$(m)= (1-\Phi_{R})m = κ̲ m$' 
     
 x1 = np.linspace(0,25,1000)
 x3 = np.linspace(0,intersect_m,300)
@@ -778,7 +793,10 @@ plt.ylim(0,1.12*conFunc_PF(25))
 plt.text(0,1.12*conFunc_PF(25)+0.05,"$c$",fontsize = 22)
 plt.text(25+0.1,0,"$m$",fontsize = 22)
 plt.text(2.5,1,r'$c(m)$',fontsize = 22,fontweight='bold')
-plt.text(6,5,r'$\overline{\overline{c}}(m)= \overline{\kappa}m = (1-\wp^{1/\rho}\Phi_{R})m$',fontsize = 22,fontweight='bold')
+if iflatexExists:
+    plt.text(6,5,r'$\overline{\overline{c}}(m)= \overline{\kappa}m = (1-\wp^{1/\rho}\pmb{\text{\TH}}_{R})m$',fontsize = 22,fontweight='bold')
+else:
+    plt.text(6,5,r'$\overline{\overline{c}}(m)= \overline{\kappa}m = (1-\wp^{1/\rho}\Phi_{R})m$',fontsize = 22,fontweight='bold')
 plt.text(2.2,3.8, cMaxLabel,fontsize = 22,fontweight='bold')
 plt.text(9,4.1,r'Upper Bound $ = $ Min $[\overline{\overline{c}}(m),\overline{c}(m)]$',fontsize = 22,fontweight='bold')
 plt.text(7,0.7,cMinLabel,fontsize = 22,fontweight='bold')
@@ -801,7 +819,7 @@ else:
 # %% [markdown]
 # ### [The Consumption Function and Target $m$](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#cFuncBounds)
 #
-# This figure shows the $\mathrm{\mathbb{E}}_{t}[\Delta m_{t+1}]$ and consumption function $c(m_{t})$, along with the intrsection of these two functions, which defines the target value of $m$
+# This figure shows the $\mathrm{\mathbb{E}}_{t}[\Delta m_{t+1}]$ and consumption function $c(m_{t})$, along with the intersection of these two functions, which defines the target value of $m$
 
 # %%
 # This just plots objects that have already been constructed
@@ -819,9 +837,12 @@ plt.plot([baseEx_inf.solution[0].mNrmSS, baseEx_inf.solution[0].mNrmSS],[0,2.5],
 plt.tick_params(labelbottom=False, labelleft=False,left='off',right='off',bottom='off',top='off')
 plt.text(0,1.47,r"$c$",fontsize = 26)
 plt.text(3.02,0,r"$m$",fontsize = 26)
-plt.text(2.3,0.95,r'$\mathsf{E}[\Delta m_{t+1}] = 0$',fontsize = 22,fontweight='bold')
+if iflatexExists:
+    plt.text(2.3,0.94,r'$\mathbb{E}_{t}[\Delta m_{t+1}] = 0$',fontsize = 22,fontweight='bold')
+else:
+    plt.text(2.3,0.94,r'$\mathsf{E}_{t}[\Delta m_{t+1}] = 0$',fontsize = 22,fontweight='bold')
 plt.text(2.3,1.1,r"$c(m_{t})$",fontsize = 22,fontweight='bold')
-plt.text(baseEx_inf.solution[0].mNrmSS,-0.05, r"$\check{m}$",fontsize = 26)
+plt.text(baseEx_inf.solution[0].mNrmSS-0.05,-0.1, r"$\check{m}$",fontsize = 26)
 plt.arrow(2.28,1.12,-0.1,0.03,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
 plt.arrow(2.28,0.97,-0.1,0.02,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
 if Generator:
@@ -859,7 +880,7 @@ MPCUpper = (1 - baseEx_inf.UnempPrb ** (1.0/baseEx_inf.CRRA)*(baseEx_inf.Rfree*b
 # Define the lower bound of MPC
 MPCLower = k_lower
 
-kappaDef=r'$\underline{\kappa}\equiv(1-\Phi_{R})$'
+kappaDef=r'$\underline{\kappa}\equiv(1-\pmb{\text{\TH}}_{R})$'
 if not iflatexExists:
     kappaDef=r'κ̲$\equiv(1-\Phi_{R})$'
 
@@ -869,12 +890,16 @@ plt.plot([0,8],[MPCLower,MPCLower],color = 'black')
 plt.xlim(0,8)
 plt.ylim(0,1)
 plt.text(1.5,0.6,r'$\kappa(m) \equiv c^{\prime}(m)$',fontsize = 26,fontweight='bold')
-plt.text(6,0.87,r'$(1-\wp^{1/\rho}\Phi_{R})\equiv \overline{\kappa}$',fontsize = 26,fontweight='bold')
+if iflatexExists:
+    plt.text(5,0.87,r'$(1-\wp^{1/\rho}\pmb{\text{\TH}}_{R})\equiv \overline{\kappa}$',fontsize = 26,fontweight='bold')
+else:
+    plt.text(5,0.87,r'$(1-\wp^{1/\rho}\Phi_{R})\equiv \overline{\kappa}$',fontsize = 26,fontweight='bold')
+    
 plt.text(0.5,0.07,kappaDef,fontsize = 26,fontweight='bold')
 plt.text(8.05,0,"$m$",fontsize = 26)
 plt.arrow(1.45,0.61,-0.4,0,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
-plt.arrow(1.7,0.07,0.2,-0.01,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
-plt.arrow(5.95,0.875,-0.2,0.03,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
+plt.arrow(2.2,0.07,0.2,-0.01,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
+plt.arrow(4.95,0.895,-0.2,0.03,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
 if Generator:
     plt.savefig(os.path.join(Figures_HARK_dir, 'MPCLimits.png'))
     plt.savefig(os.path.join(Figures_HARK_dir, 'MPCLimits.jpg'))
@@ -889,6 +914,4 @@ else:
 # %% [markdown]
 # # Summary
 #
-# [Two tables in the paper](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#Sufficient-Conditions-For-Nondegenerate-Solution) summarize the various definitions, and then articulate conditions required for the problem to have a nondegenerate solution.
-#
-# The main other contribution of the paper is to show that, under parametric combinations where the solution is nondegenerate, if the Growth Impatience Condition holds there will be a target level of wealth.
+# [Two tables in the paper](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#Factors-Defined-And-Compared) summarize the various definitions, and then articulate conditions required for the problem to have a nondegenerate solution.  Among the nondegenerate cases, the most interesting result is that if the Growth Impatience Condition holds there will be a target level of wealth.
