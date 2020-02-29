@@ -167,7 +167,7 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 # put your answer here
 
 # %% [markdown]
-# # PROBLEM : Consequences of "Luck" for Saving (cont)
+# # PROBLEM : "Luck" and Saving (cont)
 #
 # Now we are interested in comparing the people who were "lucky" vs those who were "unlucky"
 #
