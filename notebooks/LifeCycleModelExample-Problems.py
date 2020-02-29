@@ -37,11 +37,13 @@ import numpy as np
 
 
 # %% {"code_folding": [0]}
-# Set up values for simulation parameters in the dictionary dictionary 
+# Set up default values for CRRA, DiscFac, and simulation variables in the dictionary 
+Params.init_consumer_objects["CRRA"]= 2.00            # Default coefficient of relative risk aversion (rho)
+Params.init_consumer_objects["DiscFac"]= 0.97         # Default intertemporal discount factor (beta)
 Params.init_consumer_objects["PermGroFacAgg"]= 1.0    # Aggregate permanent income growth factor 
-Params.init_consumer_objects["aNrmInitMean"]= -10.0   # Mean of log initial assets (\approx = 0)
+Params.init_consumer_objects["aNrmInitMean"]= -10.0   # Mean of log initial assets 
 Params.init_consumer_objects["aNrmInitStd"]= 1.0      # Standard deviation of log initial assets
-Params.init_consumer_objects["pLvlInitMean"]= 0.0     # Mean log initial permanent income (everyone starts with log(pLvl)=0)
+Params.init_consumer_objects["pLvlInitMean"]= 0.0     # Mean of log initial permanent income 
 Params.init_consumer_objects["pLvlInitStd"]= 0.0      # Standard deviation of log initial permanent income
 
 
@@ -56,7 +58,7 @@ LifeCyclePop.solve()                            # Obtain consumption rules by ag
 LifeCyclePop.unpackcFunc()                      # Expose the consumption rules
 
 # Which variables do we want to track
-LifeCyclePop.track_vars = ['aNrmNow','pLvlNow','mNrmNow','cNrmNow','TranShkNow','pLvlNow']
+LifeCyclePop.track_vars = ['aNrmNow','pLvlNow','mNrmNow','cNrmNow','TranShkNow']
 
 LifeCyclePop.T_sim = 120                        # Nobody lives to be older than 145 years (=25+120)
 LifeCyclePop.initializeSim()                    # Construct the age-25 distribution of income and assets
@@ -108,7 +110,7 @@ warnings.filterwarnings("ignore") # Suppress some disturbing but harmless warnin
 for t in range(1,LifeCyclePop.T_cycle+1):
     #aLvlGro_hist[0] = 0 # set the first growth rate to 0, since there is no data for period 0
     aLvlGroNow = np.log((LifeCyclePop.aNrmNow_hist[t]   *LifeCyclePop.pLvlNow_hist[t])/ \
-                         LifeCyclePop.aNrmNow_hist[t-1])* # (10000,)
+                         LifeCyclePop.aNrmNow_hist[t-1] *LifeCyclePop.pLvlNow_hist[t-1]) # (10000,)
 
     # Call the saving rate function defined above 
     savRte = savRteFunc(LifeCyclePop, LifeCyclePop.mNrmNow_hist[t] )
@@ -153,7 +155,7 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 # put your solution here
 
 # %% [markdown]
-# # PROBLEM : Consequences of "Luck" for Saving
+# # PROBLEM : "Luck" and Saving
 #
 # In this model, each consumer experiences a set of draws of permanent income shocks over their lifetime.  Some will be lucky and draw a mostly positive series of shocks (and unlucky people experience negative shocks).
 #
@@ -177,13 +179,30 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 # put your answer here
 
 # %% [markdown]
-# # PROBLEM : Consequences of "Luck" for Saving (cont)
+# # PROBLEM : "Luck" and Saving (cont)
 #
 # You can have luck in transitory income shocks or in permanent income shocks.  Their consequences are quite different.  With a permanent shock, you expect your (noncapital) income to change forever, and (according to Friedman (1957)) you should adjust your consumption nearly one-for-one.  With a transitory shock, you expect your income to return to its "permanent" level so you do not consume. So if you get a positive transitory shock, you will mostly save it.
 #
 # The existence of transitory shocks therefore means that people who have on average experienced positive transitory shocks over their lifetimes should have higher saving rates.  That would bias the relationship between lifetime income and the $\texttt{aNrm}$ ratio upward.
 #
 # To see how important this might be, redo the same exercise as before, but using the level of (noncapital) permanent income (rather than overall income including transitory and permanent) over the lifetime
+
+# %%
+# put your solution here
+
+# %% [markdown]
+# # PROBLEM : Saving Rates and Wealth Levels
+#
+# The Haig-Simons definition of "saving" is basically the amount by which your wealth changes from one period to the next. This definition includes the consequences of any capital gains (or losses) for your wealth.  
+#
+# In recent work, Faegering, Holm, Natvik, and Moll have proposed that instead households largely ignore the consequences of capital gains and losses.  That is, their consumption is largely unchanged by asset price movements.
+#
+# Specifically, they define "active saving" as the difference between income and consumption _neglecting_ any contriubutions from "buy and hold" assets like houses or stocks.  The "active saving rate" is the quantity of active saving divided by the level of income. They find that the "active saving rate" is remarkably stable over the range from roughly the 20th percentile to the 95th percentile of the wealth distribution.
+#
+# The basic model considered above does not allow for capital gains or losses, so it can be used to calculate directly the saving behavior of people who do not anticipate capital gains and losses.  So, the saving rate computed by the $\texttt{savRte}$ function above should correspond to their "active saving rate."
+#
+# Your problem is, for the entire population simulated above, to calculate what this predicts about the saving rate they measure.  You will do this by grouping the population into vigntile bins, and calculating the average active saving rate for all the households in each vigntile, and then plotting the wealth vigntiles against their saving rates.
+#
 
 # %%
 # put your solution here
