@@ -331,10 +331,22 @@ LifeCyclePop2.simulate()                         # Simulate a population behavin
 # For consumer in period 41 (age 66), calculate this object, then plot it against the $\texttt{aNrm}$ ratio at age 66.
 
 # %%
-mNrm = LifeCyclePop2.mNrmNow_hist
-incNrm = (LifeCyclePop2.Rfree -1.)*(mNrm-1.) + 1
-incLvl = incNrm*LifeCyclePop2.pLvlNow_hist
-cumIncLvl = np.cumsum(incLvl, axis = 1)
+LifeCyclePop2.incNrm_hist = LifeCyclePop2.TranShkNow_hist
+LifeCyclePop2.incLvl_hist = LifeCyclePop2.incNrm_hist*LifeCyclePop2.pLvlNow_hist
+LifeCyclePop2.cumIncLvl_hist = np.cumsum(LifeCyclePop2.incLvl_hist, axis = 0)
+cumIncLvl41 = LifeCyclePop2.cumIncLvl_hist[41]
+
+n, bins, patches = plt.hist(cumIncLvl41, 50, density = 'True')
+# %%
+aNrm = LifeCyclePop2.aNrmNow_hist
+aNrm41 = aNrm[41]
+
+LifeCyclePop2.aLvlNow_hist = LifeCyclePop2.aNrmNow_hist*LifeCyclePop2.pLvlNow_hist
+aLvl = LifeCyclePop2.aLvlNow_hist
+aLvl41 = aLvl[41]
+
+plt.scatter(aNrm41, cumIncLvl41)
+
 
 # %% [markdown]
 # # PROBLEM : "Luck" and Saving (cont)
@@ -346,7 +358,11 @@ cumIncLvl = np.cumsum(incLvl, axis = 1)
 # To see how important this might be, redo the same exercise as before, but using the level of (noncapital) permanent income (rather than overall income including transitory and permanent) over the lifetime
 
 # %%
-# put your solution here
+LifeCyclePop2.cumPincLvl_hist = np.cumsum(LifeCyclePop2.pLvlNow_hist, axis = 0)
+cumPincLvl = LifeCyclePop2.cumPincLvl_hist
+cumPincLvl41 = cumPincLvl[41]
+
+plt.scatter(aNrm41, cumPincLvl41)
 
 # %% [markdown]
 # # PROBLEM : Saving Rates and Wealth Levels
