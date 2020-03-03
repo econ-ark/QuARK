@@ -283,7 +283,12 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 # Perhaps more interesting than the distribution of asset growth rates over the life cycle is the distribution of the level of assets, or the ratio of assets to permanent income.
 #
 # Construct a plot similar to the one above for the disributions of $\texttt{aNrm}$ and $\texttt{aLev}$ in the period just BEFORE retirement (44 periods from the start).
-#
+aNrm39 = LifeCyclePop.aNrmNow_hist[39]
+aLvl39 = LifeCyclePop.aLvlNow_hist[39]
+
+n, bins, patches = plt.hist(aNrm39, 50, density=True)
+n, bins, patches = plt.hist(aLvl39, 50, density=True)
+
 
 # %% {"code_folding": []}
 # put your solution here
@@ -291,14 +296,30 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 # %% [markdown]
 # # PROBLEM : "Luck" and Saving
 #
-# In this model, each consumer experiences a set of draws of permanent income shocks over their lifetime.  Some will be lucky and draw a mostly positive series of shocks (and unlucky people experience negative shocks).
+# In this model, each consumer experiences a set of draws of permanent income shocks over their lifetime.
+# Some will be lucky and draw a mostly positive series of shocks 
+# (and unlucky people experience negative shocks).
 #
 # This problem asks you to examine the consequences of these shocks for the lifetime pattern of saving.
 #
-# The first step is to recalibrate the model so that there is no difference in initial assets, then reconstruct the initial conditions and simulate the model:
+# The first step is to recalibrate the model so that there is 
+# no difference in initial assets, then reconstruct the initial conditions and simulate the model:
 
 # %%
-# put your answer here
+# Just update the relevant parameter and create a new object with otherwise similar properties.
+Params.init_consumer_objects["aNrmInitStd"]= 0.0      # Standard deviation of log initial assets
+LifeCyclePop2 = cShksModl.IndShockConsumerType(**Params.init_consumer_objects)
+
+# Solve and simulate the model (ignore the "warning" message)
+LifeCyclePop2.solve()                            # Obtain consumption rules by age 
+LifeCyclePop2.unpackcFunc()                      # Expose the consumption rules
+
+# Which variables do we want to track
+LifeCyclePop2.track_vars = ['aNrmNow','pLvlNow','mNrmNow','cNrmNow','TranShkNow']
+
+LifeCyclePop2.T_sim = 120                        # Nobody lives to be older than 145 years (=25+120)
+LifeCyclePop2.initializeSim()                    # Construct the age-25 distribution of income and assets
+LifeCyclePop2.simulate()                         # Simulate a population behaving according to this model
 
 # %% [markdown]
 # # PROBLEM : "Luck" and Saving (cont)
@@ -310,7 +331,10 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 # For consumer in period 41 (age 66), calculate this object, then plot it against the $\texttt{aNrm}$ ratio at age 66.
 
 # %%
-# put your answer here
+mNrm = LifeCyclePop2.mNrmNow_hist
+incNrm = (LifeCyclePop2.Rfree -1.)*(mNrm-1.) + 1
+incLvl = incNrm*LifeCyclePop2.pLvlNow_hist
+cumIncLvl = np.cumsum(incLvl, axis = 1)
 
 # %% [markdown]
 # # PROBLEM : "Luck" and Saving (cont)
