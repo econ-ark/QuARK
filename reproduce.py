@@ -11,6 +11,9 @@ def reproduce_quark():
     parser.add_argument(
         "--pr", help="add the PR number to test"
         )
+    parser.add_argument(
+        "notebook", help="path to notebook"
+    )
     args = parser.parse_args()
 
     RUN_LOCAL = args.local
@@ -18,12 +21,15 @@ def reproduce_quark():
     if args.pr is None and RUN_LOCAL is False:
         print("Please provide a PR number if you want to test your PR to QuARK or use the command `$ python reproduce.py --local` to test the local notebook.")
         return
+    if args.notebook is not None and args.notebook[-6:] != '.ipynb':
+        print("Make sure you have provided a notebook file (.ipynb) as input file")
+        return
+    # remove .ipynb extension from the name
+    NOTEBOOK_NAME = args.notebook[:-6]
+    #NOTEBOOK_NAME = f"notebooks/LifeCycleModelExample-Problems-And-Solutions"
 
     ORIGIN = f"https://github.com/econ-ark/QuARK"
     DOCKER_IMAGE = f"econark/econ-ark-notebook"
-
-    NOTEBOOK_NAME = f"LifeCycleModelExample-Problems-And-Solutions"
-
 
 
     pwd = subprocess.run(["pwd"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -35,7 +41,7 @@ def reproduce_quark():
     container_id = container_id.stdout.decode("utf-8")[:-1]
 
     if not RUN_LOCAL:
-        PATH_TO_NOTEBOOK = f"/home/jovyan/QuARK/notebooks/"
+        PATH_TO_NOTEBOOK = f"/home/jovyan/QuARK/"
         # fetch the PR
         subprocess.run(
             [
@@ -44,12 +50,15 @@ def reproduce_quark():
             shell=True,
         )
     else:
-        PATH_TO_NOTEBOOK = f"/home/jovyan/work/notebooks/"
+        PATH_TO_NOTEBOOK = f"/home/jovyan/work/"
 
+    # if running using local command make it just [notebook]-reproduce.ipynb
+    if PR is None:
+        PR = "local"
     # copy the notebook file to reproduce notebook
     subprocess.run(
         [
-            f"docker exec -it  {container_id} bash -c 'cp {PATH_TO_NOTEBOOK}{NOTEBOOK_NAME}.ipynb {PATH_TO_NOTEBOOK}{NOTEBOOK_NAME}-reproduce.ipynb'"
+            f"docker exec -it  {container_id} bash -c 'cp {PATH_TO_NOTEBOOK}{NOTEBOOK_NAME}.ipynb {PATH_TO_NOTEBOOK}{NOTEBOOK_NAME}-reproduce-{PR}.ipynb'"
         ],
         shell=True,
     )
@@ -57,7 +66,7 @@ def reproduce_quark():
     # execute the reproduce notebook
     subprocess.run(
         [
-            f"docker exec -it  {container_id} bash -c 'jupyter nbconvert --to notebook --inplace --execute {PATH_TO_NOTEBOOK}{NOTEBOOK_NAME}-reproduce.ipynb'"
+            f"docker exec -it  {container_id} bash -c 'jupyter nbconvert --to notebook --inplace --execute {PATH_TO_NOTEBOOK}{NOTEBOOK_NAME}-reproduce-{PR}.ipynb'"
         ],
         shell=True,
     )
@@ -65,11 +74,11 @@ def reproduce_quark():
     if not RUN_LOCAL:
         # copy the reproduce notebook back to local machine
         subprocess.run(
-            [f"docker exec -it  {container_id} bash -c 'cp {PATH_TO_NOTEBOOK}{NOTEBOOK_NAME}-reproduce.ipynb /home/jovyan/work/notebooks/'"],
+            [f"docker exec -it  {container_id} bash -c 'cp {PATH_TO_NOTEBOOK}{NOTEBOOK_NAME}-reproduce-{PR}.ipynb /home/jovyan/work/notebooks/'"],
             shell=True,
         )
     else:
-        # the notebook is already running locally 
+        # the notebook is already running locally
         pass
 
     subprocess.run([f"docker stop {container_id}"], shell=True)
