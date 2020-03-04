@@ -347,6 +347,10 @@ aLvl41 = aLvl[41]
 
 plt.scatter(aNrm41, cumIncLvl41)
 
+# %% Plotting to see what a permanent income series might look like
+ages = [25+i for i in range(120)]
+individual = 1
+plt.scatter(ages, LifeCyclePop2.pLvlNow_hist[:,individual])
 
 # %% [markdown]
 # # PROBLEM : "Luck" and Saving (cont)
@@ -378,5 +382,21 @@ plt.scatter(aNrm41, cumPincLvl41)
 # Your problem is, for the entire population simulated above, to calculate what this predicts about the saving rate they measure.  You will do this by grouping the population into vigntile bins, and calculating the average active saving rate for all the households in each vigntile, and then plotting the wealth vigntiles against their saving rates.
 #
 
-# %%
-# put your solution here
+# %% Pseudo-code for doing optional task
+# For simplicity, I will consider the saving-rate for those close to retirement
+# I.e. period 39
+
+# 1. Create a list of vigntiles:
+vigntiles = [i for i in range(1,100,5)]
+
+# 12 Create a  (attribute?) in the LifeCyclePop2-object which captures
+# the individual's wealth vigntile.
+LifeCyclePop2.aVigntile = np.percentileofscore()
+
+# 2. Loop over a set 
+
+
+
+aVigntiles = np.percentile(LifeCyclePop2.aLvlNow_hist[41,:], vigntiles)
+
+
