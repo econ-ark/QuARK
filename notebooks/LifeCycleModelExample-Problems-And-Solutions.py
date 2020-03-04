@@ -1,17 +1,151 @@
 # ---
 # jupyter:
+#   cite2c:
+#     citations:
+#       6202365/7MR8GUVS:
+#         DOI: 10.3982/QE694
+#         URL: https://onlinelibrary.wiley.com/doi/abs/10.3982/QE694
+#         abstract: In a model calibrated to match micro- and macroeconomic evidence
+#           on household income dynamics, we show that a modest degree of heterogeneity
+#           in household preferences or beliefs is sufficient to match empirical measures
+#           of wealth inequality in the United States. The heterogeneity-augmented model's
+#           predictions are consistent with microeconomic evidence that suggests that
+#           the annual marginal propensity to consume (MPC) is much larger than the
+#           roughly 0.04 implied by commonly used macroeconomic models (even ones including
+#           some heterogeneity). The high MPC arises because many consumers hold little
+#           wealth despite having a strong precautionary motive. Our model also plausibly
+#           predicts that the aggregate MPC can differ greatly depending on how the
+#           shock is distributed across households (depending, e.g., on their wealth,
+#           or employment status).
+#         accessed:
+#           day: 5
+#           month: 2
+#           year: 2019
+#         author:
+#         - family: Carroll
+#           given: Christopher
+#         - family: Slacalek
+#           given: Jiri
+#         - family: Tokuoka
+#           given: Kiichi
+#         - family: White
+#           given: Matthew N.
+#         container-title: Quantitative Economics
+#         id: 6202365/7MR8GUVS
+#         issue: '3'
+#         issued:
+#           year: 2017
+#         language: en
+#         note: 'Citation Key: carrollDistributionWealthMarginal2017'
+#         page: 977-1020
+#         page-first: '977'
+#         title: The distribution of wealth and the marginal propensity to consume
+#         type: article-journal
+#         volume: '8'
+#       6202365/B9BGV9W3:
+#         URL: http://www.nber.org/papers/w22822
+#         abstract: "We provide a systematic analysis of the properties of individual\
+#           \ returns to wealth using twenty years of population data from Norway\u2019\
+#           s administrative tax records. We document a number of novel results. First,\
+#           \ in a given cross-section, individuals earn markedly different returns\
+#           \ on their assets, with a difference of 500 basis points between the 10th\
+#           \ and the 90th percentile. Second, heterogeneity in returns does not arise\
+#           \ merely from differences in the allocation of wealth between safe and risky\
+#           \ assets: returns are heterogeneous even within asset classes. Third, returns\
+#           \ are positively correlated with wealth. Fourth, returns have an individual\
+#           \ permanent component that accounts for 60% of the explained variation.\
+#           \ Fifth, for wealth below the 95th percentile, the individual permanent\
+#           \ component accounts for the bulk of the correlation between returns and\
+#           \ wealth; the correlation at the top reflects both compensation for risk\
+#           \ and the correlation of wealth with the individual permanent component.\
+#           \ Finally, the permanent component of the return to wealth is also (mildly)\
+#           \ correlated across generations. We discuss the implications of these findings\
+#           \ for several strands of the wealth inequality debate."
+#         accessed:
+#           day: 17
+#           month: 3
+#           year: 2019
+#         author:
+#         - family: Fagereng
+#           given: Andreas
+#         - family: Guiso
+#           given: Luigi
+#         - family: Malacrino
+#           given: Davide
+#         - family: Pistaferri
+#           given: Luigi
+#         genre: Working Paper
+#         id: 6202365/B9BGV9W3
+#         issued:
+#           month: 11
+#           year: 2016
+#         note: 'DOI: 10.3386/w22822'
+#         number: '22822'
+#         publisher: National Bureau of Economic Research
+#         title: Heterogeneity and Persistence in Returns to Wealth
+#         type: report
 #   jupytext:
 #     cell_metadata_filter: collapsed,code_folding
 #     formats: ipynb,py:percent
+#     notebook_metadata_filter: all
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.2'
-#       jupytext_version: 1.2.1
+#       jupytext_version: 1.2.3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
+#   language_info:
+#     codemirror_mode:
+#       name: ipython
+#       version: 3
+#     file_extension: .py
+#     mimetype: text/x-python
+#     name: python
+#     nbconvert_exporter: python
+#     pygments_lexer: ipython3
+#     version: 3.7.6
+#   latex_envs:
+#     LaTeX_envs_menu_present: true
+#     autoclose: false
+#     autocomplete: false
+#     bibliofile: biblio.bib
+#     cite_by: apalike
+#     current_citInitial: 1
+#     eqLabelWithNumbers: true
+#     eqNumInitial: 1
+#     hotkeys:
+#       equation: Ctrl-E
+#       itemize: Ctrl-I
+#     labels_anchors: false
+#     latex_user_defs: false
+#     report_style_numbering: false
+#     user_envs_cfg: false
+#   varInspector:
+#     cols:
+#       lenName: 16
+#       lenType: 16
+#       lenVar: 40
+#     kernels_config:
+#       python:
+#         delete_cmd_postfix: ''
+#         delete_cmd_prefix: 'del '
+#         library: var_list.py
+#         varRefreshCmd: print(var_dic_list())
+#       r:
+#         delete_cmd_postfix: ') '
+#         delete_cmd_prefix: rm(
+#         library: var_list.r
+#         varRefreshCmd: 'cat(var_dic_list()) '
+#     types_to_exclude:
+#     - module
+#     - function
+#     - builtin_function_or_method
+#     - instance
+#     - _Feature
+#     window_display: false
 # ---
 
 # %% [markdown]
@@ -32,12 +166,11 @@
 import HARK.ConsumptionSaving.ConsIndShockModel as cShksModl        # The consumption-saving micro model
 import HARK.SolvingMicroDSOPs.Calibration.EstimationParameters as Params    # Parameters for the consumer type and the estimation
 from HARK.utilities import plotFuncsDer, plotFuncs              # Some tools
-import pandas as pd 
 
 import numpy as np
 
 
-# %% {"code_folding": [0]}
+# %% {"code_folding": []}
 # Set up default values for CRRA, DiscFac, and simulation variables in the dictionary 
 Params.init_consumer_objects["CRRA"]= 2.00            # Default coefficient of relative risk aversion (rho)
 Params.init_consumer_objects["DiscFac"]= 0.97         # Default intertemporal discount factor (beta)
@@ -66,7 +199,7 @@ LifeCyclePop.initializeSim()                    # Construct the age-25 distribut
 LifeCyclePop.simulate()                         # Simulate a population behaving according to this model
 
 
-# %% {"code_folding": [0]}
+# %% {"code_folding": []}
 # Plot the consumption functions during working life
 
 print('Consumption as a function of market resources while working:')
@@ -74,18 +207,14 @@ mMin = min([LifeCyclePop.solution[t].mNrmMin for t in range(LifeCyclePop.T_cycle
 plotFuncs(LifeCyclePop.cFunc[:LifeCyclePop.T_retire],mMin,5)
 
 
-# %% {"code_folding": [0]}
+# %% {"code_folding": []}
 # Define the saving rate function
-def savRteFunc(SomeType, m, t):
+def savRteFunc(SomeType, m):
     """
     Parameters:
     ----------
         SomeType: 
              Agent type that has been solved and simulated.
-        m:
-            normalized market resources of agent
-        t:
-            age of agent (from starting in the workforce)
         
         
     Returns:
@@ -94,7 +223,7 @@ def savRteFunc(SomeType, m, t):
     
     """
     inc = (SomeType.Rfree -1.)*(m-1.)+1. # Normalized by permanent labor income
-    cns = SomeType.solution[t].cFunc(m)  # Consumption (normalized)
+    cns = SomeType.solution[0].cFunc(m)  # Consumption (normalized)
     sav = inc - cns                      # Flow of saving this period
     savRte = sav / inc                   # Saving Rate
     return savRte  
@@ -118,7 +247,7 @@ for t in range(1,LifeCyclePop.T_cycle+1):
                          LifeCyclePop.aNrmNow_hist[t-1] *LifeCyclePop.pLvlNow_hist[t-1]) # (10000,)
 
     # Call the saving rate function defined above 
-    savRte = savRteFunc(LifeCyclePop, LifeCyclePop.mNrmNow_hist[t] , t)
+    savRte = savRteFunc(LifeCyclePop, LifeCyclePop.mNrmNow_hist[t] )
       
     savRte_list.append(savRte) # Add this period's saving rate to the list 
 
@@ -134,7 +263,7 @@ for t in range(1,LifeCyclePop.T_cycle+1):
     
     giant_list[t-1] = matrix_list
 
-# %% {"code_folding": [0]}
+# %% {"code_folding": []}
 # Construct the level of assets A from a*p where a is the ratio to permanent income p
 # Remember 41 is "years after entering workforce" (=age 25); 66 is the year right after retirement
 LifeCyclePop.aLvlNow_hist = LifeCyclePop.aNrmNow_hist*LifeCyclePop.pLvlNow_hist
@@ -142,7 +271,7 @@ aGro41=LifeCyclePop.aLvlNow_hist[41]/LifeCyclePop.aLvlNow_hist[40]
 aGro41NoU=aGro41[aGro41[:]>0.2] # Throw out extreme outliers; don't want growth rates relative to 0 income!
 
 
-# %% {"code_folding": [0]}
+# %% {"code_folding": []}
 # Plot the (truncated) distribution of growth rates of wealth between age 65 and 66 (=25 + 41)
 from matplotlib import pyplot as plt
 n, bins, patches = plt.hist(aGro41NoU,50,density=True)
@@ -156,7 +285,7 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 # Construct a plot similar to the one above for the disributions of $\texttt{aNrm}$ and $\texttt{aLev}$ in the period just BEFORE retirement (44 periods from the start).
 #
 
-# %%
+# %% {"code_folding": []}
 # put your solution here
 
 # %% [markdown]
@@ -190,64 +319,24 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 #
 # The existence of transitory shocks therefore means that people who have on average experienced positive transitory shocks over their lifetimes should have higher saving rates.  That would bias the relationship between lifetime income and the $\texttt{aNrm}$ ratio upward.
 #
-# To see how important this might be, redo the same exercise as before, but using the level of (noncapital) permanent income (rather than overall income including transitory and permanent) over the lifetime.  Comment on the result
+# To see how important this might be, redo the same exercise as before, but using the level of (noncapital) permanent income (rather than overall income including transitory and permanent) over the lifetime
 
 # %%
 # put your solution here
 
 # %% [markdown]
-# # PROBLEM : Saving Rates and Wealth Ratios
+# # PROBLEM : Saving Rates and Wealth Levels
 #
-# The [Haig-Simons definition of "saving"](https://en.wikipedia.org/wiki/Haig%E2%80%93Simons_income) is basically the amount by which your wealth changes from one period to the next. This definition includes the consequences of any capital gains (or losses) for your wealth.  
+# The Haig-Simons definition of "saving" is basically the amount by which your wealth changes from one period to the next. This definition includes the consequences of any capital gains (or losses) for your wealth.  
 #
-# In recent work, [Faegering, Holm, Natvik, and Moll](http://www.nber.org/papers/w26588) have proposed that instead households largely ignore the consequences of capital gains and losses.  That is, their consumption is largely unchanged by asset price movements.
+# In recent work, Faegering, Holm, Natvik, and Moll have proposed that instead households largely ignore the consequences of capital gains and losses.  That is, their consumption is largely unchanged by asset price movements.
 #
-# Specifically, they define "active saving" as the difference between income and consumption _neglecting_ any contriubutions from "buy and hold" assets like houses or stocks.  The "active saving rate" is the quantity of active saving divided by the level of income. They find that the "active saving rate" is remarkably stable over the range from roughly the 20th percentile to the 95th percentile of the wealth distribution (see the figures below from their paper).
+# Specifically, they define "active saving" as the difference between income and consumption _neglecting_ any contriubutions from "buy and hold" assets like houses or stocks.  The "active saving rate" is the quantity of active saving divided by the level of income. They find that the "active saving rate" is remarkably stable over the range from roughly the 20th percentile to the 95th percentile of the wealth distribution.
 #
 # The basic model considered above does not allow for capital gains or losses, so it can be used to calculate directly the saving behavior of people who do not anticipate capital gains and losses.  So, the saving rate computed by the $\texttt{savRte}$ function above should correspond to their "active saving rate."
 #
-# Your problem: For the entire population simulated above, calculate what the model predicts about the saving rate they measure.  You will do this by grouping the population into vigntile bins, and calculating the average active saving rate for all the households in each vigntile, and then plotting the wealth vigntiles against their saving rates.
-#
-# ![fbbn-sav-by-age-and-ed.jpg](https://github.com/llorracc/Figures/blob/master/fbbn-sav-by-age-and-ed.jpg?raw=true)
+# Your problem is, for the entire population simulated above, to calculate what this predicts about the saving rate they measure.  You will do this by grouping the population into vigntile bins, and calculating the average active saving rate for all the households in each vigntile, and then plotting the wealth vigntiles against their saving rates.
 #
 
 # %%
 # put your solution here
-
-# %% [markdown]
-# # Saving Rates and Lifetime Income Growth
-#
-# We are interested in how income growth over the lifetime of the agent affects their saving rate and asset ratio $a=A/P$.
-#
-
-# %%
-cumulative_income_first_half = np.sum(LifeCyclePop.pLvlNow_hist[0:20,:]*LifeCyclePop.TranShkNow_hist[0:20,:],0)
-cumulative_income_second_half = np.sum(LifeCyclePop.pLvlNow_hist[20:40,:]*LifeCyclePop.TranShkNow_hist[20:40,:],0)
-lifetime_growth = cumulative_income_second_half/cumulative_income_first_half
-
-t=39
-vigntiles = qcut(lifetime_growth,20,labels=False)
-savRte = savRteFunc(LifeCyclePop, LifeCyclePop.mNrmNow_hist[t] , t)
-savRtgueseByVigtile = np.zeros(20)
-assetsByVigtile = np.zeros(20)
-assetsNrmByVigtile = np.zeros(20)
-for i in range(20):
-    savRteByVigtile[i] = np.mean(savRte[vigntiles==i])
-    assetsByVigtile[i] = np.mean(LifeCyclePop.aLvlNow_hist[t][vigntiles==i])
-    assetsNrmByVigtile[i] = np.mean(LifeCyclePop.aNrmNow_hist[t][vigntiles==i])
-plt.plot(np.array(range(20)), savRteByVigtile)
-plt.title("Saving Rate at age 65, by Vigntile of Lifetime Income Growth")
-plt.xlabel("Vigntile of Lifetime Income Growth")
-plt.ylabel("Savings Rate")
-
-plt.figure()
-plt.plot(np.array(range(20)), assetsByVigtile)
-plt.title("Assets at age 65, by Vigntile of Lifetime Income Growth")
-plt.xlabel("Vigntile of Lifetime Income Growth")
-plt.ylabel("Assets")
-
-plt.figure()
-plt.plot(np.array(range(20)), assetsNrmByVigtile)
-plt.title("Normalized Assets at age 65, by Vigntile of Lifetime Income Growth")
-plt.xlabel("Vigntile of Lifetime Income Growth")
-plt.ylabel("Normalized Assets")
