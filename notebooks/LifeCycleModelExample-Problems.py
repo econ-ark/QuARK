@@ -26,12 +26,13 @@
 #
 # The default parameters of the HARK life cycle model have not been optmized to match features of the Norwegian data; a first step in a real "structural" estimation would be to use Norwegian calibrate the inputs to the model (like the profile of income, and the magnitude of income shocks, over the life cycle), and then to find the values of parameters like the time preference rate that allow the model to fit the data best.  (See [SolvingMicroDSOPs](https://econ.jhu.edu/people/ccarroll/SolvingMicroDSOPs) for how this can be done, and search for the corresponding HARK content using [our documentation](https://hark.readthedocs.io)).
 
-# %% {"code_folding": [0]}
+# %% {"code_folding": []}
 # Initial imports and notebook setup, click arrow to show
 
 import HARK.ConsumptionSaving.ConsIndShockModel as cShksModl        # The consumption-saving micro model
 import HARK.SolvingMicroDSOPs.Calibration.EstimationParameters as Params    # Parameters for the consumer type and the estimation
 from HARK.utilities import plotFuncsDer, plotFuncs              # Some tools
+import pandas as pd 
 
 import numpy as np
 
@@ -75,12 +76,16 @@ plotFuncs(LifeCyclePop.cFunc[:LifeCyclePop.T_retire],mMin,5)
 
 # %% {"code_folding": [0]}
 # Define the saving rate function
-def savRteFunc(SomeType, m):
+def savRteFunc(SomeType, m, t):
     """
     Parameters:
     ----------
         SomeType: 
              Agent type that has been solved and simulated.
+        m:
+            normalized market resources of agent
+        t:
+            age of agent (from starting in the workforce)
         
         
     Returns:
@@ -89,7 +94,7 @@ def savRteFunc(SomeType, m):
     
     """
     inc = (SomeType.Rfree -1.)*(m-1.)+1. # Normalized by permanent labor income
-    cns = SomeType.solution[0].cFunc(m)  # Consumption (normalized)
+    cns = SomeType.solution[t].cFunc(m)  # Consumption (normalized)
     sav = inc - cns                      # Flow of saving this period
     savRte = sav / inc                   # Saving Rate
     return savRte  
@@ -113,7 +118,7 @@ for t in range(1,LifeCyclePop.T_cycle+1):
                          LifeCyclePop.aNrmNow_hist[t-1] *LifeCyclePop.pLvlNow_hist[t-1]) # (10000,)
 
     # Call the saving rate function defined above 
-    savRte = savRteFunc(LifeCyclePop, LifeCyclePop.mNrmNow_hist[t] )
+    savRte = savRteFunc(LifeCyclePop, LifeCyclePop.mNrmNow_hist[t] , t)
       
     savRte_list.append(savRte) # Add this period's saving rate to the list 
 
@@ -185,24 +190,64 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 #
 # The existence of transitory shocks therefore means that people who have on average experienced positive transitory shocks over their lifetimes should have higher saving rates.  That would bias the relationship between lifetime income and the $\texttt{aNrm}$ ratio upward.
 #
-# To see how important this might be, redo the same exercise as before, but using the level of (noncapital) permanent income (rather than overall income including transitory and permanent) over the lifetime
+# To see how important this might be, redo the same exercise as before, but using the level of (noncapital) permanent income (rather than overall income including transitory and permanent) over the lifetime.  Comment on the result
 
 # %%
 # put your solution here
 
 # %% [markdown]
-# # PROBLEM : Saving Rates and Wealth Levels
+# # PROBLEM : Saving Rates and Wealth Ratios
 #
-# The Haig-Simons definition of "saving" is basically the amount by which your wealth changes from one period to the next. This definition includes the consequences of any capital gains (or losses) for your wealth.  
+# The [Haig-Simons definition of "saving"](https://en.wikipedia.org/wiki/Haig%E2%80%93Simons_income) is basically the amount by which your wealth changes from one period to the next. This definition includes the consequences of any capital gains (or losses) for your wealth.  
 #
-# In recent work, Faegering, Holm, Natvik, and Moll have proposed that instead households largely ignore the consequences of capital gains and losses.  That is, their consumption is largely unchanged by asset price movements.
+# In recent work, [Faegering, Holm, Natvik, and Moll](http://www.nber.org/papers/w26588) have proposed that instead households largely ignore the consequences of capital gains and losses.  That is, their consumption is largely unchanged by asset price movements.
 #
-# Specifically, they define "active saving" as the difference between income and consumption _neglecting_ any contriubutions from "buy and hold" assets like houses or stocks.  The "active saving rate" is the quantity of active saving divided by the level of income. They find that the "active saving rate" is remarkably stable over the range from roughly the 20th percentile to the 95th percentile of the wealth distribution.
+# Specifically, they define "active saving" as the difference between income and consumption _neglecting_ any contriubutions from "buy and hold" assets like houses or stocks.  The "active saving rate" is the quantity of active saving divided by the level of income. They find that the "active saving rate" is remarkably stable over the range from roughly the 20th percentile to the 95th percentile of the wealth distribution (see the figures below from their paper).
 #
 # The basic model considered above does not allow for capital gains or losses, so it can be used to calculate directly the saving behavior of people who do not anticipate capital gains and losses.  So, the saving rate computed by the $\texttt{savRte}$ function above should correspond to their "active saving rate."
 #
-# Your problem is, for the entire population simulated above, to calculate what this predicts about the saving rate they measure.  You will do this by grouping the population into vigntile bins, and calculating the average active saving rate for all the households in each vigntile, and then plotting the wealth vigntiles against their saving rates.
+# Your problem: For the entire population simulated above, calculate what the model predicts about the saving rate they measure.  You will do this by grouping the population into vigntile bins, and calculating the average active saving rate for all the households in each vigntile, and then plotting the wealth vigntiles against their saving rates.
+#
+# ![fbbn-sav-by-age-and-ed.jpg](https://github.com/llorracc/Figures/blob/master/fbbn-sav-by-age-and-ed.jpg?raw=true)
 #
 
 # %%
 # put your solution here
+
+# %% [markdown]
+# # Saving Rates and Lifetime Income Growth
+#
+# We are interested in how income growth over the lifetime of the agent affects their saving rate and asset ratio $a=A/P$.
+#
+
+# %%
+cumulative_income_first_half = np.sum(LifeCyclePop.pLvlNow_hist[0:20,:]*LifeCyclePop.TranShkNow_hist[0:20,:],0)
+cumulative_income_second_half = np.sum(LifeCyclePop.pLvlNow_hist[20:40,:]*LifeCyclePop.TranShkNow_hist[20:40,:],0)
+lifetime_growth = cumulative_income_second_half/cumulative_income_first_half
+
+t=39
+vigntiles = qcut(lifetime_growth,20,labels=False)
+savRte = savRteFunc(LifeCyclePop, LifeCyclePop.mNrmNow_hist[t] , t)
+savRtgueseByVigtile = np.zeros(20)
+assetsByVigtile = np.zeros(20)
+assetsNrmByVigtile = np.zeros(20)
+for i in range(20):
+    savRteByVigtile[i] = np.mean(savRte[vigntiles==i])
+    assetsByVigtile[i] = np.mean(LifeCyclePop.aLvlNow_hist[t][vigntiles==i])
+    assetsNrmByVigtile[i] = np.mean(LifeCyclePop.aNrmNow_hist[t][vigntiles==i])
+plt.plot(np.array(range(20)), savRteByVigtile)
+plt.title("Saving Rate at age 65, by Vigntile of Lifetime Income Growth")
+plt.xlabel("Vigntile of Lifetime Income Growth")
+plt.ylabel("Savings Rate")
+
+plt.figure()
+plt.plot(np.array(range(20)), assetsByVigtile)
+plt.title("Assets at age 65, by Vigntile of Lifetime Income Growth")
+plt.xlabel("Vigntile of Lifetime Income Growth")
+plt.ylabel("Assets")
+
+plt.figure()
+plt.plot(np.array(range(20)), assetsNrmByVigtile)
+plt.title("Normalized Assets at age 65, by Vigntile of Lifetime Income Growth")
+plt.xlabel("Vigntile of Lifetime Income Growth")
+plt.ylabel("Normalized Assets")
