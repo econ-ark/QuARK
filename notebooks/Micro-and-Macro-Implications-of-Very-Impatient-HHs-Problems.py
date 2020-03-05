@@ -311,7 +311,6 @@ print('The MPC at the 10th percentile of the distribution is '+str(decfmt2(MPCpe
 print('The MPC at the 50th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[4])))
 print('The MPC at the 90th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[-1])))
 
-listPcentiles = percentiles
 # %% [markdown]
 # ### PROBLEM
 #
@@ -364,9 +363,9 @@ NewTypes[0].simulate()
 
 # Retrieve the MPC's
 percentiles=np.linspace(0.1,0.9,9)
-MPC_sim = np.concatenate([ThisType.MPCnow for ThisType in NewTypes])
-MPCpercentiles_quarterly = getPercentiles(MPC_sim,percentiles=percentiles)
-MPCpercentiles_annual = 1.0 - (1.0 - MPCpercentiles_quarterly)**4
+newMPC_sim = np.concatenate([ThisType.MPCnow for ThisType in NewTypes])
+newMPCpercentiles_quarterly = getPercentiles(MPC_sim,percentiles=percentiles)
+newMPCpercentiles_annual = 1.0 - (1.0 - MPCpercentiles_quarterly)**4
 
 print('The MPC at the 10th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[0])))
 print('The MPC at the 50th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[4])))
@@ -386,6 +385,22 @@ print('The MPC at the 90th percentile of the distribution is '+str(decfmt2(MPCpe
 #
 # Use the markdown block below the code block to briefly answer those questions.
 
+# %% 1. Comparing the distributions
+n, bins, patches = plt.hist([MPC_sim, newMPC_sim], 11, density=True)
+
+print('Yes, there is now a substantial proportion of households with annual MPC > 0.7.'
+ +'\n I find the hump-shape centered around 0.6, and the bunching at 1 interesting.')
+
+# %% 2. Consequences of extreme impatience on the level and distribution of wealth.
+new_aLvl_all = np.concatenate([ThisType.aLvlNow for ThisType in NewTypes])
+print('The ratio of aggregate capital to permanent income is ' + decfmt2(np.mean(aLvl_all))
+      +'\n => There is no consequence for the ability to match the level of wealth.'
+      +'\n    This is likely due to the very impatient households not having any wealth.')
+
+new_sim_wealth = np.concatenate([ThisType.aLvlNow for ThisType in NewTypes])
+new_dLor = distanceLorentz(SCF_wealth, SCF_weights, new_sim_wealth, evalPctiles)
+print('\n The Euclidean distance to the Lorenz curve changed from '  +str(dLor) +' to ' +str(new_dLor) 
+      +' indicating a better match to the empirical Lorenz curve.')
 # %% [markdown]
 # ### PROBLEM -- Plot the new distribution of wealth
 #
