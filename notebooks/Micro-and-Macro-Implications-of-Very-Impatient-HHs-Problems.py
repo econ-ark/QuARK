@@ -262,6 +262,37 @@ plt.show(block=False)
 #
 # You may find it useful to check out some documentation for $\texttt{HARK.utilities}$ [at this link](https://econ-ark.github.io/HARK/generated/HARKutilities.html).
 
+# Define the Lorentz distance function
+def distanceLorentz(SCF_wealth, SCF_weights, simWealthDist, evalPctiles):
+    """
+    Parameters:
+    ----------
+        simWealthDist: the simulated wealth distribution
+        evalPctiles: the percentiles at which to evaluate the distance to the 
+                     Lorenz curve
+                    
+        
+    Returns:
+    --------
+        distanceLorentz: float
+    
+    """
+  #  from HARK.cstwMPC.SetupParamsCSTW import SCF_wealth, SCF_weights
+    
+    SCF_Lorenz_points = getLorenzShares(SCF_wealth, weights = SCF_weights, 
+                                        percentiles = evalPctiles)
+    sim_Lorenz_points = getLorenzShares(simWealthDist, 
+                                        percentiles = evalPctiles)
+    
+    distanceLorentz = sum((sim_Lorenz_points - SCF_Lorenz_points)**2)
+    
+    
+    
+    return distanceLorentz  
+
+# %%
+    evalPctiles = np.linspace(0.2, 0.8, 4)
+    dLor = distanceLorentz(SCF_wealth, SCF_weights, sim_wealth, evalPctiles)
 # %% [markdown]
 # ## The Distribution Of the Marginal Propensity to Consume
 #
@@ -280,6 +311,7 @@ print('The MPC at the 10th percentile of the distribution is '+str(decfmt2(MPCpe
 print('The MPC at the 50th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[4])))
 print('The MPC at the 90th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[-1])))
 
+listPcentiles = percentiles
 # %% [markdown]
 # ### PROBLEM
 #
@@ -290,6 +322,24 @@ print('The MPC at the 90th percentile of the distribution is '+str(decfmt2(MPCpe
 # Your function should take two inputs: a list of types of consumers and an array of percentiles (numbers between 0 and 1). It should return no outputs, merely print to screen one line of text for each requested percentile.  The model is calibrated at a quarterly frequency, but Carroll et al report MPCs at an annual frequency. To convert, use the formula:
 #
 # $\kappa_{Y} \approx 1.0 - (1.0 - \kappa_{Q})^4$
+
+# Define the Lorentz distance function
+def printPercentiles(MyTypes, listPcentiles):
+
+    MPC_sim = np.concatenate([ThisType.MPCnow for ThisType in MyTypes])
+    MPCpercentiles_quarterly = getPercentiles(MPC_sim, percentiles = listPcentiles)
+    MPCpercentiles_annually = 1.0 - (1.0 - MPCpercentiles_quarterly)**4
+
+
+    myStr = str()
+    for ii in range(len(listPcentiles)-1):
+        tempStr = 'The MPC at the '+str(decfmt2(listPcentiles[ii]*100)) +'th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annually[ii]))
+        myStr = myStr +tempStr +'\n'
+        
+    print(myStr)
+    return
+# %%
+printPercentiles(MyTypes, percentiles)
 
 # %% [markdown]
 # ## Adding Very Impatient Households
