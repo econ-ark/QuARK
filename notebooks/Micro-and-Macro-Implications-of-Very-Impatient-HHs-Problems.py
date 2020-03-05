@@ -401,7 +401,18 @@ new_sim_wealth = np.concatenate([ThisType.aLvlNow for ThisType in NewTypes])
 new_dLor = distanceLorentz(SCF_wealth, SCF_weights, new_sim_wealth, evalPctiles)
 print('\n The Euclidean distance to the Lorenz curve changed from '  +str(dLor) +' to ' +str(new_dLor) 
       +' indicating a better match to the empirical Lorenz curve.')
+
+# %% 3. Empirical rejection of "rational" consumption models
+print('No, we can not reject the hypthesis that hand-to-mouth households arise in the data due to being very impatient.')
 # %% [markdown]
 # ### PROBLEM -- Plot the new distribution of wealth
 #
 # The $\texttt{matplotlib}$ library provides plotting functionality that replicates Matlab's plot features (more or less). As an example of how to use it, we have written a few lines of code that plot the empirical vs simulated Lorenz curves.  Write some code that plots the CDF of the MPC before and after adding very impatient households, and plots the DIFFERENCES between the Lorenz curves across the two populations.  Interpret the two graphs.
+
+# See previous section for the comparison of MPC distributions
+new_sim_Lorenz_points = getLorenzShares(new_sim_wealth,percentiles=pctiles)
+#newWealthpercentiles = getPercentiles(new_sim_wealth, percentiles = ppercentiles)
+
+sim_Lorenz_points = getLorenzShares(sim_wealth,percentiles=pctiles)
+
+plt.plot(pctiles, new_sim_Lorenz_points - sim_Lorenz_points)
