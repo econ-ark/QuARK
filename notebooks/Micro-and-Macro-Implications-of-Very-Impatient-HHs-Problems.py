@@ -263,7 +263,7 @@ plt.show(block=False)
 # You may find it useful to check out some documentation for $\texttt{HARK.utilities}$ [at this link](https://econ-ark.github.io/HARK/generated/HARKutilities.html).
 
 # Define the Lorentz distance function
-def distanceLorentz(SCF_wealth, SCF_weights, simWealthDist, evalPctiles):
+def distanceLorentz(someTypes):
     """
     Parameters:
     ----------
@@ -277,22 +277,23 @@ def distanceLorentz(SCF_wealth, SCF_weights, simWealthDist, evalPctiles):
         distanceLorentz: float
     
     """
-  #  from HARK.cstwMPC.SetupParamsCSTW import SCF_wealth, SCF_weights
+    evalPctiles = np.linspace(0.2, 0.8, 4)
+    
+    sim_wealth = np.concatenate([ThisType.aLvlNow for ThisType in someTypes])
     
     SCF_Lorenz_points = getLorenzShares(SCF_wealth, weights = SCF_weights, 
                                         percentiles = evalPctiles)
-    sim_Lorenz_points = getLorenzShares(simWealthDist, 
+    sim_Lorenz_points = getLorenzShares(sim_wealth, 
                                         percentiles = evalPctiles)
     
-    distanceLorentz = sum((sim_Lorenz_points - SCF_Lorenz_points)**2)
+    distanceLorentz = np.sqrt(np.sum((sim_Lorenz_points - SCF_Lorenz_points)**2))
     
     
     
     return distanceLorentz  
 
 # %%
-    evalPctiles = np.linspace(0.2, 0.8, 4)
-    dLor = distanceLorentz(SCF_wealth, SCF_weights, sim_wealth, evalPctiles)
+dLor = distanceLorentz(MyTypes)
 # %% [markdown]
 # ## The Distribution Of the Marginal Propensity to Consume
 #
@@ -331,14 +332,23 @@ def printPercentiles(MyTypes, listPcentiles):
 
 
     myStr = str()
-    for ii in range(len(listPcentiles)-1):
-        tempStr = 'The MPC at the '+str(decfmt2(listPcentiles[ii]*100)) +'th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annually[ii]))
+    for ii in range(len(listPcentiles)):
+        nbrPcentile = int(round(100*listPcentiles[ii], 0))
+        if np.mod(nbrPcentile, 10) >3 or nbrPcentile == 11 or  nbrPcentile== 12 or nbrPcentile== 13:
+            tempStr = 'The MPC at the ' +str(nbrPcentile) +'th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annually[ii]))
+        elif np.mod(nbrPcentile, 10) == 1:
+            tempStr = 'The MPC at the ' +str(nbrPcentile) +'st percentile of the distribution is '+str(decfmt2(MPCpercentiles_annually[ii]))
+        elif np.mod(nbrPcentile, 10) == 2:
+            tempStr = 'The MPC at the ' +str(nbrPcentile) +'nd percentile of the distribution is '+str(decfmt2(MPCpercentiles_annually[ii]))
+        elif np.mod(nbrPcentile, 10) == 3:
+            tempStr = 'The MPC at the ' +str(nbrPcentile) +'rd percentile of the distribution is '+str(decfmt2(MPCpercentiles_annually[ii]))
         myStr = myStr +tempStr +'\n'
         
     print(myStr)
     return
 # %%
-printPercentiles(MyTypes, percentiles)
+myPercentiles = [0.01, 0.02, 0.03, 0.04, 0.11, 0.12, 0.13, 0.20, 0.21, 0.22, 0.23, 0.24]
+printPercentiles(MyTypes, myPercentiles)
 
 # %% [markdown]
 # ## Adding Very Impatient Households
@@ -387,32 +397,32 @@ print('The MPC at the 90th percentile of the distribution is '+str(decfmt2(MPCpe
 
 # %% 1. Comparing the distributions
 n, bins, patches = plt.hist([MPC_sim, newMPC_sim], 11, density=True)
-
-print('Yes, there is now a substantial proportion of households with annual MPC > 0.7.'
+h2m_share = sum(newMPC_sim>=0.7)/len(newMPC_sim)
+print('No, there is now a small proportion of households with annual MPC >= 0.7. \n'
+      +'The share of hand-to-mouth consumers is ' +str(decfmt2(100*h2m_share)) +' percent.'
  +'\n I find the hump-shape centered around 0.6, and the bunching at 1 interesting.')
 
 # %% 2. Consequences of extreme impatience on the level and distribution of wealth.
 new_aLvl_all = np.concatenate([ThisType.aLvlNow for ThisType in NewTypes])
-print('The ratio of aggregate capital to permanent income is ' + decfmt2(np.mean(aLvl_all))
-      +'\n => There is no consequence for the ability to match the level of wealth.'
-      +'\n    This is likely due to the very impatient households not having any wealth.')
+print('The ratio of aggregate capital to permanent income is ' + decfmt2(np.mean(new_aLvl_all))
+      +'\n => The calibration does slightly worse in matching the overall level of wealth.')
 
 new_sim_wealth = np.concatenate([ThisType.aLvlNow for ThisType in NewTypes])
-new_dLor = distanceLorentz(SCF_wealth, SCF_weights, new_sim_wealth, evalPctiles)
-print('\n The Euclidean distance to the Lorenz curve changed from '  +str(dLor) +' to ' +str(new_dLor) 
+new_dLor = distanceLorentz(NewTypes)
+print('\n The Euclidean distance to the Lorenz curve changed from '  +str(decfmt2(dLor)) +' to ' +str(decfmt2(new_dLor)) 
       +' indicating a better match to the empirical Lorenz curve.')
 
-# %% 3. Empirical rejection of "rational" consumption models
-print('No, we can not reject the hypthesis that hand-to-mouth households arise in the data due to being very impatient.')
+    # %% 3. Empirical rejection of "rational" consumption models
+    print('No, we can not reject the hypthesis that hand-to-mouth can result from optimizing behavior.')
 # %% [markdown]
 # ### PROBLEM -- Plot the new distribution of wealth
 #
 # The $\texttt{matplotlib}$ library provides plotting functionality that replicates Matlab's plot features (more or less). As an example of how to use it, we have written a few lines of code that plot the empirical vs simulated Lorenz curves.  Write some code that plots the CDF of the MPC before and after adding very impatient households, and plots the DIFFERENCES between the Lorenz curves across the two populations.  Interpret the two graphs.
 
-# See previous section for the comparison of MPC distributions
 new_sim_Lorenz_points = getLorenzShares(new_sim_wealth,percentiles=pctiles)
-#newWealthpercentiles = getPercentiles(new_sim_wealth, percentiles = ppercentiles)
-
 sim_Lorenz_points = getLorenzShares(sim_wealth,percentiles=pctiles)
 
 plt.plot(pctiles, new_sim_Lorenz_points - sim_Lorenz_points)
+
+# %%
+n, bins, patches = plt.hist([MPC_sim, newMPC_sim], 11, density = True, cumulative = True)
