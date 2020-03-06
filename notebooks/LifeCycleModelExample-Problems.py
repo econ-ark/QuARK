@@ -3,6 +3,7 @@
 #   jupytext:
 #     cell_metadata_filter: collapsed,code_folding
 #     formats: ipynb,py:percent
+#     notebook_metadata_filter: all
 #     text_representation:
 #       extension: .py
 #       format_name: percent
@@ -12,6 +13,16 @@
 #     display_name: Python 3
 #     language: python
 #     name: python3
+#   language_info:
+#     codemirror_mode:
+#       name: ipython
+#       version: 3
+#     file_extension: .py
+#     mimetype: text/x-python
+#     name: python
+#     nbconvert_exporter: python
+#     pygments_lexer: ipython3
+#     version: 3.7.6
 # ---
 
 # %% [markdown]
@@ -226,11 +237,12 @@ cumulative_income_second_half = np.sum(LifeCyclePop.pLvlNow_hist[20:40,:]*LifeCy
 lifetime_growth = cumulative_income_second_half/cumulative_income_first_half
 
 t=39
-vigntiles = qcut(lifetime_growth,20,labels=False)
+vigntiles = pd.qcut(lifetime_growth,20,labels=False)
 savRte = savRteFunc(LifeCyclePop, LifeCyclePop.mNrmNow_hist[t] , t)
 savRtgueseByVigtile = np.zeros(20)
 assetsByVigtile = np.zeros(20)
 assetsNrmByVigtile = np.zeros(20)
+savRteByVigtile = np.zeros(20)
 for i in range(20):
     savRteByVigtile[i] = np.mean(savRte[vigntiles==i])
     assetsByVigtile[i] = np.mean(LifeCyclePop.aLvlNow_hist[t][vigntiles==i])
