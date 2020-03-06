@@ -283,7 +283,12 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 # Perhaps more interesting than the distribution of asset growth rates over the life cycle is the distribution of the level of assets, or the ratio of assets to permanent income.
 #
 # Construct a plot similar to the one above for the disributions of $\texttt{aNrm}$ and $\texttt{aLev}$ in the period just BEFORE retirement (44 periods from the start).
-#
+aNrm39 = LifeCyclePop.aNrmNow_hist[39]
+aLvl39 = LifeCyclePop.aLvlNow_hist[39]
+
+n, bins, patches = plt.hist(aNrm39, 50, density=True)
+n, bins, patches = plt.hist(aLvl39, 50, density=True)
+
 
 # %% {"code_folding": []}
 # put your solution here
@@ -291,14 +296,30 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 # %% [markdown]
 # # PROBLEM : "Luck" and Saving
 #
-# In this model, each consumer experiences a set of draws of permanent income shocks over their lifetime.  Some will be lucky and draw a mostly positive series of shocks (and unlucky people experience negative shocks).
+# In this model, each consumer experiences a set of draws of permanent income shocks over their lifetime.
+# Some will be lucky and draw a mostly positive series of shocks 
+# (and unlucky people experience negative shocks).
 #
 # This problem asks you to examine the consequences of these shocks for the lifetime pattern of saving.
 #
-# The first step is to recalibrate the model so that there is no difference in initial assets, then reconstruct the initial conditions and simulate the model:
+# The first step is to recalibrate the model so that there is 
+# no difference in initial assets, then reconstruct the initial conditions and simulate the model:
 
 # %%
-# put your answer here
+# Just update the relevant parameter and create a new object with otherwise similar properties.
+Params.init_consumer_objects["aNrmInitStd"]= 0.0      # Standard deviation of log initial assets
+LifeCyclePop2 = cShksModl.IndShockConsumerType(**Params.init_consumer_objects)
+
+# Solve and simulate the model (ignore the "warning" message)
+LifeCyclePop2.solve()                            # Obtain consumption rules by age 
+LifeCyclePop2.unpackcFunc()                      # Expose the consumption rules
+
+# Which variables do we want to track
+LifeCyclePop2.track_vars = ['aNrmNow','pLvlNow','mNrmNow','cNrmNow','TranShkNow']
+
+LifeCyclePop2.T_sim = 120                        # Nobody lives to be older than 145 years (=25+120)
+LifeCyclePop2.initializeSim()                    # Construct the age-25 distribution of income and assets
+LifeCyclePop2.simulate()                         # Simulate a population behaving according to this model
 
 # %% [markdown]
 # # PROBLEM : "Luck" and Saving (cont)
@@ -310,7 +331,26 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 # For consumer in period 41 (age 66), calculate this object, then plot it against the $\texttt{aNrm}$ ratio at age 66.
 
 # %%
-# put your answer here
+LifeCyclePop2.incNrm_hist = LifeCyclePop2.TranShkNow_hist
+LifeCyclePop2.incLvl_hist = LifeCyclePop2.incNrm_hist*LifeCyclePop2.pLvlNow_hist
+LifeCyclePop2.cumIncLvl_hist = np.cumsum(LifeCyclePop2.incLvl_hist, axis = 0)
+cumIncLvl41 = LifeCyclePop2.cumIncLvl_hist[41]
+
+n, bins, patches = plt.hist(cumIncLvl41, 50, density = 'True')
+# %%
+aNrm = LifeCyclePop2.aNrmNow_hist
+aNrm41 = aNrm[41]
+
+LifeCyclePop2.aLvlNow_hist = LifeCyclePop2.aNrmNow_hist*LifeCyclePop2.pLvlNow_hist
+aLvl = LifeCyclePop2.aLvlNow_hist
+aLvl41 = aLvl[41]
+
+plt.scatter(aNrm41, cumIncLvl41)
+
+# %% Plotting to see what a permanent income series might look like
+ages = [25+i for i in range(120)]
+individual = 1
+plt.scatter(ages, LifeCyclePop2.pLvlNow_hist[:,individual])
 
 # %% [markdown]
 # # PROBLEM : "Luck" and Saving (cont)
@@ -322,7 +362,11 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 # To see how important this might be, redo the same exercise as before, but using the level of (noncapital) permanent income (rather than overall income including transitory and permanent) over the lifetime
 
 # %%
-# put your solution here
+LifeCyclePop2.cumPincLvl_hist = np.cumsum(LifeCyclePop2.pLvlNow_hist, axis = 0)
+cumPincLvl = LifeCyclePop2.cumPincLvl_hist
+cumPincLvl41 = cumPincLvl[41]
+
+plt.scatter(aNrm41, cumPincLvl41)
 
 # %% [markdown]
 # # PROBLEM : Saving Rates and Wealth Levels
@@ -338,5 +382,21 @@ n, bins, patches = plt.hist(aGro41NoU,50,density=True)
 # Your problem is, for the entire population simulated above, to calculate what this predicts about the saving rate they measure.  You will do this by grouping the population into vigntile bins, and calculating the average active saving rate for all the households in each vigntile, and then plotting the wealth vigntiles against their saving rates.
 #
 
-# %%
-# put your solution here
+# %% Pseudo-code for doing optional task
+# For simplicity, I will consider the saving-rate for those close to retirement
+# I.e. period 39
+
+# 1. Create a list of vigntiles:
+vigntiles = [i for i in range(1,100,5)]
+
+# 12 Create a  (attribute?) in the LifeCyclePop2-object which captures
+# the individual's wealth vigntile.
+LifeCyclePop2.aVigntile = np.percentileofscore()
+
+# 2. Loop over a set 
+
+
+
+aVigntiles = np.percentile(LifeCyclePop2.aLvlNow_hist[41,:], vigntiles)
+
+
