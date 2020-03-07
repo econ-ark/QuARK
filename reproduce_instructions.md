@@ -10,7 +10,11 @@ This will create a new notebook `{Notebook}-reproduce.ipynb` (in this case `Life
 - Once you create a pull request on GitHub you can test it again using `python reproduce.py --pr X notebooks/NAME_OF_NOTEBOOK` where `X` is the pull request number. For example to test https://github.com/econ-ark/QuARK/pull/1 and the LifeCycleModel notebook `python reproduce.py --pr 1 notebooks/LifeCycleModelExample-Problems-And-Solutions.ipynb`. [Make sure you are still in the QuARK directory]
 
 
-Troubleshoot:
+### Options:
+
+- `--timeout` you can increase the default timeout of each *cell* in the notebook by adding the timeout option. Default is 600 seconds for each cell, example usage `python reproduce.py --timeout 900 --local notebooks/LifeCycleModelExample-Problems-And-Solutions.ipynb` this will change timeout to 900 seconds for each cell. (use this in case of timeout error)
+
+### Troubleshoot:
 
 - If you get an error like 
 ```

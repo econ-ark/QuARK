@@ -12,6 +12,9 @@ def reproduce_quark():
         "--pr", help="add the PR number to test"
         )
     parser.add_argument(
+        "--timeout", help="indvidual cell timeout limit, default 600s"
+    )
+    parser.add_argument(
         "notebook", help="path to notebook"
     )
     args = parser.parse_args()
@@ -30,16 +33,17 @@ def reproduce_quark():
 
     ORIGIN = f"https://github.com/econ-ark/QuARK"
     DOCKER_IMAGE = f"econark/econ-ark-notebook"
-
+    TIMEOUT = args.timeout if args.timeout is not None else 600
 
     pwd = subprocess.run(["pwd"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     mount = str(pwd.stdout)[2:-3] + ":/home/jovyan/work"
     # mount the present directory and start up a container
+    print('Fetching the docker copy for reproducing results, this may take some time if running the reproduce.py command for the first time')
     container_id = subprocess.run(
         ["docker", "run", "-v", mount, "-d", DOCKER_IMAGE], stdout=subprocess.PIPE, stderr=subprocess.PIPE
     )
     container_id = container_id.stdout.decode("utf-8")[:-1]
-
+    print('A docker container is created to execute the notebook')
     if not RUN_LOCAL:
         PATH_TO_NOTEBOOK = f"/home/jovyan/QuARK/"
         # fetch the PR
@@ -66,7 +70,7 @@ def reproduce_quark():
     # execute the reproduce notebook
     subprocess.run(
         [
-            f"docker exec -it  {container_id} bash -c 'jupyter nbconvert --to notebook --inplace --execute {PATH_TO_NOTEBOOK}{NOTEBOOK_NAME}-reproduce-{PR}.ipynb'"
+            f"docker exec -it  {container_id} bash -c 'jupyter nbconvert --ExecutePreprocessor.timeout={TIMEOUT} --to notebook --inplace --execute {PATH_TO_NOTEBOOK}{NOTEBOOK_NAME}-reproduce-{PR}.ipynb'"
         ],
         shell=True,
     )
