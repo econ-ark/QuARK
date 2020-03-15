@@ -66,6 +66,9 @@ saveFigs=True
 # Whether to draw the figures
 drawFigs=True
 
+import HARK
+if HARK.__version__ < '0.10.4':
+    raise ImportError('This notebook requires atleast econ-ark v0.10.4,  please update your installation pip install -U econ-ark or conda install -c conda-forge econ-ark')
 
 
 from HARK.utilities import find_gui, make_figs, determine_platform, test_latex_installation, setup_latex_env_notebook
