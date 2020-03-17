@@ -204,6 +204,52 @@ print('Distance from Fagereng et al Table 9 is ' + str(dist))
 
 # %%
 # Put your solution here
+drop_corner = True # If True, ignore upper left corner when calculating distance
+Splurge = 0.0    # Consumers automatically spend this amount of any lottery prize (default = 0.0)
+
+f_temp = lambda x : FagerengObjFunc(x[0],x[1])
+opt_params = minimizeNelderMead(f_temp, guess, verbose=True)
+print('Finished estimating for scaling factor of ' + str(AdjFactor) + ' and "splurge amount" of $' + str(1000*Splurge))
+print('Optimal (beta,nabla) is ' + str(opt_params) + ', simulated MPCs are:')
+dist = FagerengObjFunc(opt_params[0],opt_params[1],True)
+print('Distance from Fagereng et al Table 9 is ' + str(dist))
+
+# %%
+print('\n\
+When not matching the lowest MPC-wealth-cell, the distrance to the \
+empirical distribution is lower than when matching the whole \
+distribution. \n\
+Furthermore, the estimated discount factor is higher, implying that \
+households are more patient on average. \n\
+The spread in discount rates is also lower. \n\
+The combined effect is that both most impatient, and the most patient household \
+is more patient than the corresponding household when matching the full \
+MPC-wealth distribution. \n\
+In order to generate a higher average MPC and a larger spread in MPCs, the \
+first estimation requires both lower patience, on average, and more \
+heterogeneity in patience. \n\
+\n\
+Not matching the upper-left corner of the MPC-distribution is equivalent to \
+saying that the current model is not a good model for those households. These \
+are households which have low wealth and win small prizes. \
+One way to think about the high MPC is that these households either have \
+    \n 1) future financial committments which they settle today, or \
+    \n 2) the lottery win allows them to purchase durable goods today \n\
+As long as these "uses" are of constant dollar value (i.e. do to scale with \
+the size of the prize) we would expect the MPC to be declining in the value \
+of the prize. This is also the case in the data. \
+')
+
+# %% Estimating with splurge > 0
+drop_corner = False # If True, ignore upper left corner when calculating distance
+Splurge = 0.43*lottery_size[0]    # Consumers automatically spend this amount of any lottery prize (default = 0.0)
+
+f_temp = lambda x : FagerengObjFunc(x[0],x[1])
+opt_params = minimizeNelderMead(f_temp, guess, verbose=True)
+print('Finished estimating for scaling factor of ' + str(AdjFactor) + ' and "splurge amount" of $' + str(1000*Splurge))
+print('Optimal (beta,nabla) is ' + str(opt_params) + ', simulated MPCs are:')
+dist = FagerengObjFunc(opt_params[0],opt_params[1],True)
+print('Distance from Fagereng et al Table 9 is ' + str(dist))
 
 # %% [markdown]
 # ### PROBLEM
@@ -213,5 +259,213 @@ print('Distance from Fagereng et al Table 9 is ' + str(dist))
 # For the baseline version of the model with the "splurge" component, calculate the MPCC's for years `t+1` through `t+3` and plot them together with the MPC in the first year (including the splurge component)
 #
 
+center = 0.7898188094496416
+spread = 0.16098056707531155
+
+ahead = 3
+
 # %%
-# Put your solution here
+# # def MPCC(ahead):
+# #     '''
+# #     Calculates the margina propensity to continue consuming (MPCC) in
+
+# #     Parameters
+# #     ----------
+# #     ahead : integer
+# #         Number of periods ahead to calculate the MPCC.
+    
+# #     Returns
+# #     -------
+# #     MPCC : float
+# #         The MPCC n-periods ahead (n=ahead).
+# #     '''
+#     # Give our consumer types the requested discount factor distribution
+# beta_set = approxUniform(N=TypeCount,bot=center-spread,top=center+spread)[1]
+# for j in range(TypeCount):
+#     EstTypeList[j](DiscFac = beta_set[j])
+
+# # Solve and simulate all consumer types, then gather their wealth levels
+# multiThreadCommands(EstTypeList,['solve()','initializeSim()','simulate()','unpackcFunc()'])
+# WealthNow = np.concatenate([ThisType.aLvlNow for ThisType in EstTypeList])
+
+# # Get wealth quartile cutoffs and distribute them to each consumer type
+# quartile_cuts = getPercentiles(WealthNow,percentiles=[0.25,0.50,0.75])
+#     for ThisType in EstTypeList:
+#         WealthQ = np.zeros(ThisType.AgentCount,dtype=int)
+#         for n in range(3):
+#             WealthQ[ThisType.aLvlNow > quartile_cuts[n]] += 1
+#         ThisType(WealthQ = WealthQ)
+
+#     # Keep track of MPC sets in lists of lists of arrays
+#     MPC_set_list = [ [[],[],[],[]],
+#                       [[],[],[],[]],
+#                       [[],[],[],[]],
+#                       [[],[],[],[]] ]
+
+#     # Calculate the MPC for each of the four lottery sizes for all agents
+#     for ThisType in EstTypeList:
+#         ThisType.simulate(1)
+#         c_base = ThisType.cNrmNow
+#         MPC_this_type = np.zeros((ThisType.AgentCount,4))
+#         for k in range(4): # Get MPC for all agents of this type
+#             Llvl = lottery_size[k]
+#             Lnrm = Llvl/ThisType.pLvlNow
+#             if do_secant:
+#                 SplurgeNrm = Splurge/ThisType.pLvlNow
+#                 mAdj = ThisType.mNrmNow + Lnrm - SplurgeNrm
+#                 cAdj = ThisType.cFunc[0](mAdj) + SplurgeNrm
+#                 MPC_this_type[:,k] = (cAdj - c_base)/Lnrm
+#             else:
+#                 mAdj = ThisType.mNrmNow + Lnrm
+#                 MPC_this_type[:,k] = cAdj = ThisType.cFunc[0].derivative(mAdj)
+
+#         # Sort the MPCs into the proper MPC sets
+#         for q in range(4):
+#             these = ThisType.WealthQ == q
+#             for k in range(4):
+#                 MPC_set_list[k][q].append(MPC_this_type[these,k])
+
+#     # Calculate average within each MPC set
+#     simulated_MPC_means = np.zeros((4,4))
+#     for k in range(4):
+#         for q in range(4):
+#             MPC_array = np.concatenate(MPC_set_list[k][q])
+#             simulated_MPC_means[k,q] = np.mean(MPC_array)
+            
+# # %%
+# MPCC(4)
+
+# %%
+BaseType = IndShockConsumerType(**base_params)
+EstTypeList = []
+for j in range(TypeCount):
+    EstTypeList.append(deepcopy(BaseType))
+    EstTypeList[-1](seed = j)
+
+center = 0.78981881 
+spread = 0.16098057
+nInit = 95
+nExtra = 3
+
+# Give our consumer types the requested discount factor distribution
+beta_set = approxUniform(N=TypeCount,bot=center-spread,top=center+spread)[1]
+for j in range(TypeCount):
+    EstTypeList[j](DiscFac = beta_set[j])
+    EstTypeList[j].track_vars = ['aNrmNow','mNrmNow','cNrmNow','pLvlNow','PermShkNow','TranShkNow']
+
+# Solve and simulate all consumer types, then gather their wealth levels
+multiThreadCommands(EstTypeList,['solve()','initializeSim()','simulate(' +str(nInit) +')','unpackcFunc()'])
+WealthNow = np.concatenate([ThisType.aLvlNow for ThisType in EstTypeList])
+
+# Get wealth quartile cutoffs and distribute them to each consumer type
+quartile_cuts = getPercentiles(WealthNow,percentiles=[0.25,0.50,0.75])
+for ThisType in EstTypeList:
+    WealthQ = np.zeros(ThisType.AgentCount,dtype=int)
+    for n in range(3):
+        WealthQ[ThisType.aLvlNow > quartile_cuts[n]] += 1
+    ThisType(WealthQ = WealthQ)
+
+# Keep track of MPC sets in lists of lists of arrays
+MPC_set_list = [ [[],[],[],[]],
+                 [[],[],[],[]],
+                 [[],[],[],[]],
+                 [[],[],[],[]] ]
+
+
+# Calculate the MPC for each of the four lottery sizes for all agents
+Rfree=base_params['Rfree']
+for ThisType in EstTypeList:
+    MPC_this_type = np.zeros((ThisType.AgentCount,4))
+    ThisType.simulate(nExtra)
+    c_base = ThisType.cNrmNow_hist[nInit]
+    print(ThisType.cNrmNow)
+    print(ThisType.cNrmNow_hist[nInit + nExtra - 1])
+    
+    mAdj_hist = ThisType.mNrmNow_hist
+    # I AM HERE
+    mAdj_hist[nInit:nInit+nExtra-1] = np.zeros((nExtra, ))
+    
+    for k in range(4): # Get MPC for all agents of this type
+        Llvl = lottery_size[k]
+        Lnrm = Llvl/ThisType.pLvlNow_hist[95]
+        SplurgeNrm = Splurge/ThisType.pLvlNow_hist[95]
+        mAdj = ThisType.mNrmNow + Lnrm - SplurgeNrm
+        cAdj = ThisType.cFunc[0](mAdj) + SplurgeNrm
+        MPC_this_type[:,k] = (cAdj - c_base)/Lnrm
+        
+        
+        # Sort the MPCs into the proper MPC sets
+        for q in range(4):
+            these = ThisType.WealthQ == q
+            for k in range(4):
+                MPC_set_list[k][q].append(MPC_this_type[these,k])
+                
+                
+# Calculate average within each MPC set
+simulated_MPC_means = np.zeros((4,4))
+for k in range(4):
+    for q in range(4):
+        MPC_array = np.concatenate(MPC_set_list[k][q])
+        simulated_MPC_means[k,q] = np.mean(MPC_array)
+        
+        
+print(simulated_MPC_means)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
