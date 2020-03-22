@@ -124,7 +124,7 @@ def FagerengObjFunc(center,spread,verbose=False):
         EstTypeList[j](DiscFac = beta_set[j])
 
     # Solve and simulate all consumer types, then gather their wealth levels
-    multiThreadCommands(EstTypeList,['solve()','initializeSim()','simulate()','unpackcFunc()'])
+    multiThreadCommands(EstTypeList,['solve()','initializeSim()','simulate(95)','unpackcFunc()'])
     WealthNow = np.concatenate([ThisType.aLvlNow for ThisType in EstTypeList])
 
     # Get wealth quartile cutoffs and distribute them to each consumer type
@@ -186,7 +186,7 @@ def FagerengObjFunc(center,spread,verbose=False):
 # %% code_folding=[]
 # Conduct the estimation
 
-guess = [0.86,0.09]
+guess = [0.85,0.1]
 f_temp = lambda x : FagerengObjFunc(x[0],x[1])
 opt_params = minimizeNelderMead(f_temp, guess, verbose=True)
 print('Finished estimating for scaling factor of ' + str(AdjFactor) + ' and "splurge amount" of $' + str(1000*Splurge))
@@ -205,6 +205,7 @@ print('Distance from Fagereng et al Table 9 is ' + str(dist))
 # %% [markdown]
 # ## Put your solution here
 #
+# <!-- Results with simulate(100):
 # 1. No splurge drop_corner=False: Gives optimal $\beta=0.7898$ and $\nabla=0.1610$. Simulated MPCs are:
 # <table style="width:20%">
 #     <tr>    <td>0.7736</td><td>0.6832</td><td>0.5646</td><td>0.4048</td>  </tr>
@@ -213,7 +214,18 @@ print('Distance from Fagereng et al Table 9 is ' + str(dist))
 #     <tr>    <td>0.5613</td><td>0.5043</td><td>0.4126</td><td>0.2926</td>  </tr>
 # </table>
 # Distance from Fagereng et al Table 9 is 0.5021.
-#
+#  -->
+# <!-- Results with simulate(95): -->
+# 1. No splurge drop_corner=False: Gives optimal $\beta=0.7874$ and $\nabla=0.1602$. Simulated MPCs are:
+# <table style="width:20%">
+#     <tr><td>0.7730</td><td>0.6817</td><td>0.5629</td><td>0.4085</td></tr>
+#     <tr><td>0.7441</td><td>0.6629</td><td>0.5512</td><td>0.4003</td></tr>
+#     <tr><td>0.7031</td><td>0.6322</td><td>0.5286</td><td>0.3838</td></tr>
+#     <tr><td>0.5589</td><td>0.5011</td><td>0.4117</td><td>0.2994</td></tr>
+# </table>
+# Distance from Fagereng et al Table 9 is 0.4997.
+# <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+# <!-- Results with simulate(100):
 # 2. No splurge, drop_corner=True: Gives optimal $\beta=0.8144$ and $\nabla=0.1254$. Simulated MPCs are:
 # <table style="width:20%">
 #     <tr>    <td>0.6784</td><td>0.6236</td><td>0.5411</td><td>0.4202</td>  </tr> 
@@ -222,7 +234,18 @@ print('Distance from Fagereng et al Table 9 is ' + str(dist))
 #     <tr>    <td>0.4912</td><td>0.4583</td><td>0.3935</td><td>0.3058</td>  </tr>
 # </table> 
 # Distance from Fagereng et al Table 9 is 0.3862.
-#
+#  -->
+# <!-- Results with simulate(95): -->
+# 2. No splurge, drop_corner=True: Gives optimal $\beta=0.8111$ and $\nabla=0.1266$. Simulated MPCs are:
+# <table style="width:20%">
+#     <tr><td>0.6842</td><td>0.6257</td><td>0.5408</td><td>0.4214</td></tr>
+#     <tr><td>0.6623</td><td>0.6112</td><td>0.5299</td><td>0.4130</td></tr>
+#     <tr><td>0.6285</td><td>0.5849</td><td>0.5084</td><td>0.3963</td></tr>
+#     <tr><td>0.4897</td><td>0.4584</td><td>0.3944</td><td>0.3105</td></tr>
+# </table> 
+# Distance from Fagereng et al Table 9 is 0.3853.
+# <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+# <!-- Results with simulate(100):
 # 3. Splurge=0.7, drop_corner=False: Gives optimal $\beta=0.8572$ and $\nabla=0.1163$. Simulated MPCs are:
 # <table style="width:25%">
 #     <tr>    <td>0.7813</td><td>0.7490</td><td>0.6977</td><td>0.5700</td>  </tr>
@@ -231,7 +254,18 @@ print('Distance from Fagereng et al Table 9 is ' + str(dist))
 #     <tr>    <td>0.4383</td><td>0.4106</td><td>0.3440</td><td>0.1940</td>  </tr>
 # </table> 
 # Distance from Fagereng et al Table 9 is 0.3629.
-#
+# -->
+# <!-- Results with simulate(95): -->
+# 3. Splurge=0.7, drop_corner=False: Gives optimal $\beta=0.8532$ and $\nabla=0.1138$. Simulated MPCs are:
+# <table style="width:25%">
+#     <tr><td>0.7809</td><td>0.7503</td><td>0.6993</td><td>0.5808</td></tr>
+#     <tr><td>0.6799</td><td>0.6424</td><td>0.5735</td><td>0.4120</td></tr>
+#     <tr><td>0.6062</td><td>0.5713</td><td>0.4964</td><td>0.3220</td></tr>
+#     <tr><td>0.4329</td><td>0.4106</td><td>0.3481</td><td>0.2128</td></tr>
+# </table>        
+# Distance from Fagereng et al Table 9 is 0.3622.
+# <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+# <!-- Results with simulate(100):
 # 4. Splurge=0.7, drop_corner=True: Gives optimal $\beta=0.8683$ and $\nabla=0.0983$. Simulated MPCs are:
 # <table style="width:25%">
 #     <tr>    <td>0.7615</td><td>0.7330</td><td>0.6888</td><td>0.5805</td>  </tr>
@@ -240,6 +274,16 @@ print('Distance from Fagereng et al Table 9 is ' + str(dist))
 #     <tr>    <td>0.4038</td><td>0.3842</td><td>0.3312</td><td>0.2061</td>  </tr>
 # </table>
 # Distance from Fagereng et al Table 9 is 0.2359.
+# -->
+# <!-- Results with simulate(95): -->
+# 4. Splurge=0.7, drop_corner=True: Gives optimal $\beta=0.8642$ and $\nabla=0.0997$. Simulated MPCs are:
+# <table style="width:25%">
+#     <tr>  <td>0.7632</td><td>0.7352</td><td>0.6895</td><td>0.5824</td></tr>
+#     <tr>  <td>0.6554</td><td>0.6218</td><td>0.5599</td><td>0.4144</td></tr>
+#     <tr>  <td>0.5780</td><td>0.5481</td><td>0.4812</td><td>0.3247</td></tr>
+#     <tr>  <td>0.4023</td><td>0.3865</td><td>0.3343</td><td>0.2152</td></tr>
+# </table>
+# Distance from Fagereng et al Table 9 is 0.2360.
 #
 # ## Discussion
 #
@@ -247,7 +291,7 @@ print('Distance from Fagereng et al Table 9 is ' + str(dist))
 #
 # Focusing rather on the splurge component, we compare results 2 (without a splurge) vs 4 (with a splurge included). Setting splurge=0.7 gives an automatic increase in spending after the lottery which is not generated by the model. In the real world such an increase in spending makes sense if, for example, the lottery win enables a purchase of a durable good that a consumer was saving for. Such a mechanism is not included in the model. 
 #
-# With the splurge fixed and independent of wealth and lottery sizes, the inclusion of the splurge increases MPCs for the smallest lottery wins and reduces it for the larger wins. This enables the model to generate a larger difference in MPCs for different lottery sizes, and improves the fit with the data. The improved fit is achieved with $\beta$ centered around $0.87$ rather than $0.81$ since the splurge enables the model to imply high MPCs for the smallest lottery wins without needing to reduce $\beta$. The higher $\beta$ then enables lower MPCs for the larger lottery wins. 
+# With the splurge fixed and independent of wealth and lottery sizes, the inclusion of the splurge increases MPCs for the smallest lottery wins and reduces it for the larger wins. This enables the model to generate a larger difference in MPCs for different lottery sizes, and improves the fit with the data. The improved fit is achieved with $\beta$ centered around $0.86$ rather than $0.81$ since the splurge enables the model to imply high MPCs for the smallest lottery wins without needing to reduce $\beta$. The higher $\beta$ then enables lower MPCs for the larger lottery wins. 
 #
 
 # %% [markdown]
@@ -342,6 +386,9 @@ for n in range(numPeriods):
             simulated_MPC_means[k,q, n] = np.mean(MPC_array)
 
 # %%
+np.round(simulated_MPC_means[:,:,0],4)
+
+# %%
 import matplotlib.pyplot as plt
 
 for lottSize in range(4):
@@ -354,5 +401,3 @@ for lottSize in range(4):
 plt.subplots_adjust(hspace=0.6, wspace=0.4)
 # plt.legend(loc='best')
 plt.show()
-
-# %%
