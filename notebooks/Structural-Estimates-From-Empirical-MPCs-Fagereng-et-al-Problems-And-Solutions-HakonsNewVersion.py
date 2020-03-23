@@ -186,15 +186,13 @@ def FagerengObjFunc(center,spread,verbose=False):
 # %% code_folding=[]
 # Conduct the estimation
 
-guess = [0.92,0.03]
-guess = [0.78981881,0.16098057]
+guess = [0.85,0.1]
 f_temp = lambda x : FagerengObjFunc(x[0],x[1])
 opt_params = minimizeNelderMead(f_temp, guess, verbose=True)
 print('Finished estimating for scaling factor of ' + str(AdjFactor) + ' and "splurge amount" of $' + str(1000*Splurge))
 print('Optimal (beta,nabla) is ' + str(opt_params) + ', simulated MPCs are:')
 dist = FagerengObjFunc(opt_params[0],opt_params[1],True)
 print('Distance from Fagereng et al Table 9 is ' + str(dist))
-
 
 # %% [markdown]
 # ### PROBLEM
@@ -205,35 +203,95 @@ print('Distance from Fagereng et al Table 9 is ' + str(dist))
 # Hint: What the authors are able to measure is actually the marginal propensity to EXPEND, not the marginal propensity to CONSUME as it is defined in our benchmark model.
 
 # %% [markdown]
-# MPC distribution for `splurge=0.7` and `drop_corner=0` is  
-# 0.78058645 0.74852543 0.69758672  0.57062401  
-# 0.68077668 0.64027802 0.57082729  0.39800477  
-# 0.60892177 0.5696061 0.4929874   0.30577941  
-# 0.43708697 0.40971915 0.34376774  0.1947101  
-# Estimation: beta-point =0.86, nabla =12   
-# The distance is 0.36  
-# The estimator choses a relatively low beta and high nabla when `drop_corner` is set to zero. This is because it puts high importance on matching the MPC value in the upper left corner of the target matrix as the distance to the target is large. The low beta, however, deteriorates matches with the MPC target in other lottery / wealth quartiles. 
+# ## Put your solution here
 #
+# <!-- Results with simulate(100):
+# 1. No splurge drop_corner=False: Gives optimal $\beta=0.7898$ and $\nabla=0.1610$. Simulated MPCs are:
+# <table style="width:20%">
+#     <tr>    <td>0.7736</td><td>0.6832</td><td>0.5646</td><td>0.4048</td>  </tr>
+#     <tr>    <td>0.7435</td><td>0.6648</td><td>0.5530</td><td>0.3963</td>  </tr> 
+#     <tr>    <td>0.7035</td><td>0.6351</td><td>0.5305</td><td>0.3793</td>  </tr>
+#     <tr>    <td>0.5613</td><td>0.5043</td><td>0.4126</td><td>0.2926</td>  </tr>
+# </table>
+# Distance from Fagereng et al Table 9 is 0.5021.
+#  -->
+# <!-- Results with simulate(95): -->
+# 1. No splurge drop_corner=False: Gives optimal $\beta=0.7874$ and $\nabla=0.1602$. Simulated MPCs are:
+# <table style="width:20%">
+#     <tr><td>0.7730</td><td>0.6817</td><td>0.5629</td><td>0.4085</td></tr>
+#     <tr><td>0.7441</td><td>0.6629</td><td>0.5512</td><td>0.4003</td></tr>
+#     <tr><td>0.7031</td><td>0.6322</td><td>0.5286</td><td>0.3838</td></tr>
+#     <tr><td>0.5589</td><td>0.5011</td><td>0.4117</td><td>0.2994</td></tr>
+# </table>
+# Distance from Fagereng et al Table 9 is 0.4997.
+# <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+# <!-- Results with simulate(100):
+# 2. No splurge, drop_corner=True: Gives optimal $\beta=0.8144$ and $\nabla=0.1254$. Simulated MPCs are:
+# <table style="width:20%">
+#     <tr>    <td>0.6784</td><td>0.6236</td><td>0.5411</td><td>0.4202</td>  </tr> 
+#     <tr>    <td>0.6590</td><td>0.6097</td><td>0.5304</td><td>0.4116</td>  </tr>
+#     <tr>    <td>0.6275</td><td>0.5843</td><td>0.5088</td><td>0.3944</td>  </tr>
+#     <tr>    <td>0.4912</td><td>0.4583</td><td>0.3935</td><td>0.3058</td>  </tr>
+# </table> 
+# Distance from Fagereng et al Table 9 is 0.3862.
+#  -->
+# <!-- Results with simulate(95): -->
+# 2. No splurge, drop_corner=True: Gives optimal $\beta=0.8111$ and $\nabla=0.1266$. Simulated MPCs are:
+# <table style="width:20%">
+#     <tr><td>0.6842</td><td>0.6257</td><td>0.5408</td><td>0.4214</td></tr>
+#     <tr><td>0.6623</td><td>0.6112</td><td>0.5299</td><td>0.4130</td></tr>
+#     <tr><td>0.6285</td><td>0.5849</td><td>0.5084</td><td>0.3963</td></tr>
+#     <tr><td>0.4897</td><td>0.4584</td><td>0.3944</td><td>0.3105</td></tr>
+# </table> 
+# Distance from Fagereng et al Table 9 is 0.3853.
+# <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+# <!-- Results with simulate(100):
+# 3. Splurge=0.7, drop_corner=False: Gives optimal $\beta=0.8572$ and $\nabla=0.1163$. Simulated MPCs are:
+# <table style="width:25%">
+#     <tr>    <td>0.7813</td><td>0.7490</td><td>0.6977</td><td>0.5700</td>  </tr>
+#     <tr>    <td>0.6817</td><td>0.6409</td><td>0.5710</td><td>0.3973</td>  </tr>
+#     <tr>    <td>0.6100</td><td>0.5703</td><td>0.4933</td><td>0.3049</td>  </tr>
+#     <tr>    <td>0.4383</td><td>0.4106</td><td>0.3440</td><td>0.1940</td>  </tr>
+# </table> 
+# Distance from Fagereng et al Table 9 is 0.3629.
+# -->
+# <!-- Results with simulate(95): -->
+# 3. Splurge=0.7, drop_corner=False: Gives optimal $\beta=0.8532$ and $\nabla=0.1138$. Simulated MPCs are:
+# <table style="width:25%">
+#     <tr><td>0.7809</td><td>0.7503</td><td>0.6993</td><td>0.5808</td></tr>
+#     <tr><td>0.6799</td><td>0.6424</td><td>0.5735</td><td>0.4120</td></tr>
+#     <tr><td>0.6062</td><td>0.5713</td><td>0.4964</td><td>0.3220</td></tr>
+#     <tr><td>0.4329</td><td>0.4106</td><td>0.3481</td><td>0.2128</td></tr>
+# </table>        
+# Distance from Fagereng et al Table 9 is 0.3622.
+# <!-- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * -->
+# <!-- Results with simulate(100):
+# 4. Splurge=0.7, drop_corner=True: Gives optimal $\beta=0.8683$ and $\nabla=0.0983$. Simulated MPCs are:
+# <table style="width:25%">
+#     <tr>    <td>0.7615</td><td>0.7330</td><td>0.6888</td><td>0.5805</td>  </tr>
+#     <tr>    <td>0.6541</td><td>0.6189</td><td>0.5587</td><td>0.4108</td>  </tr>
+#     <tr>    <td>0.5785</td><td>0.5455</td><td>0.4795</td><td>0.3197</td>  </tr>
+#     <tr>    <td>0.4038</td><td>0.3842</td><td>0.3312</td><td>0.2061</td>  </tr>
+# </table>
+# Distance from Fagereng et al Table 9 is 0.2359.
+# -->
+# <!-- Results with simulate(95): -->
+# 4. Splurge=0.7, drop_corner=True: Gives optimal $\beta=0.8642$ and $\nabla=0.0997$. Simulated MPCs are:
+# <table style="width:25%">
+#     <tr>  <td>0.7632</td><td>0.7352</td><td>0.6895</td><td>0.5824</td></tr>
+#     <tr>  <td>0.6554</td><td>0.6218</td><td>0.5599</td><td>0.4144</td></tr>
+#     <tr>  <td>0.5780</td><td>0.5481</td><td>0.4812</td><td>0.3247</td></tr>
+#     <tr>  <td>0.4023</td><td>0.3865</td><td>0.3343</td><td>0.2152</td></tr>
+# </table>
+# Distance from Fagereng et al Table 9 is 0.2360.
 #
-# MPC distribution for `splurge=0.7` and `drop_corner=1` is  
-# 0.76146837 0.73294988 0.68867587 0.58023753  
-# 0.65406631 0.61881131 0.55855225 0.41047637  
-# 0.5784164  0.54533118 0.47933813 0.31933032  
-# 0.4037176  0.38408734 0.33105934 0.20577312   
-# Estimation: beta-point = 0.87, nabla = 0.10  
-# The distance is 0.24  
-# With `drop_corner` switched on, the distance is lower. This happens (i) mechanically since one difference is excluded from the euclidean distance, but also (ii) because the now higher beta-point value, allows to match other MPC targets of lower values much easier. The point estimate of beta-point is higher, the nabla becomes smaller, another indicator that the model does a better job to replicate the data as it needs less ex-ante heterogeneity. 
+# ## Discussion
 #
+# The first thing to note about these results is the large drop in the distance from Table 9 in Fagereng et al when setting drop_corner=True (compare results 1 vs 2 and results 3 vs 4). In the table the MPC for the lowest lottery size and lowest wealth quartile is 1.047. Even with splurge=0.7 the model cannot generate an MPC close to (and certainly not above) 1. The deviation between the model MPC and the value in the data will therefore be considerable, contributing to a larger distance. Given that the model cannot generate an MPC > 1, it makes sense to drop that value, but the improvement in the distance is to some extent mechanical. Ignoring that value yields higher estimates of $\beta$ however, since lowering $\beta$ is the model's best attempt at increasing the MPC. 
 #
-# MPC distribution for `splurge=0.0` and `drop_corner=0` is  
-# 0.77363444 0.68301477 0.56440589 0.40411035  
-# 0.74357098 0.66467557 0.55281926 0.39561326  
-# 0.70355573 0.6349713  0.53035817 0.37868694  
-# 0.56134351 0.5041643  0.41242587 0.29210923    
-# Estimation: beta-point = 0.79, nabla = 0.16  
-# The distance is 0.50.  
-# With both options set to zero, we obtain the worst fit. This indicates that removing the splurge makes it more difficult for the model to match the relative high MPC for lower wealth quartiles. This is compensated by a lower beta-point estimate. However, this goes at the cost of other, lower values of the MPC targets. 
+# Focusing rather on the splurge component, we compare results 2 (without a splurge) vs 4 (with a splurge included). Setting splurge=0.7 gives an automatic increase in spending after the lottery which is not generated by the model. In the real world such an increase in spending makes sense if, for example, the lottery win enables a purchase of a durable good that a consumer was saving for. Such a mechanism is not included in the model. 
 #
+# With the splurge fixed and independent of wealth and lottery sizes, the inclusion of the splurge increases MPCs for the smallest lottery wins and reduces it for the larger wins. This enables the model to generate a larger difference in MPCs for different lottery sizes, and improves the fit with the data. The improved fit is achieved with $\beta$ centered around $0.86$ rather than $0.81$ since the splurge enables the model to imply high MPCs for the smallest lottery wins without needing to reduce $\beta$. The higher $\beta$ then enables lower MPCs for the larger lottery wins. 
 #
 
 # %% [markdown]
@@ -245,135 +303,105 @@ print('Distance from Fagereng et al Table 9 is ' + str(dist))
 #
 
 # %%
-def FagerengFutureObjFunc(center,spread,verbose=False):
+# Put your solution here
 
-    # Give our consumer types the requested discount factor distribution
-    beta_set = approxUniform(N=TypeCount,bot=center-spread,top=center+spread)[1]
-    for j in range(TypeCount):
-        EstTypeList[j](DiscFac = beta_set[j])
-        # add tracking vars to each Type
-        EstTypeList[j].track_vars = ['aNrmNow','mNrmNow','cNrmNow','pLvlNow','PermShkNow','TranShkNow']
+# Use estimated beta range from case 4 above (splurge + drop_corner=True)
+center = opt_params[0]
+spread = opt_params[1]
 
-    # Solve and simulate all consumer types, then gather their wealth levels
-    StartPeriod = 95;
-    multiThreadCommands(EstTypeList,['solve()','initializeSim()','simulate(95)','unpackcFunc()'])
-    WealthNow = np.concatenate([ThisType.aLvlNow for ThisType in EstTypeList])
+# Give our consumer types the estimated discount factor distribution
+beta_set = approxUniform(N=TypeCount,bot=center-spread,top=center+spread)[1]
+for j in range(TypeCount):
+    EstTypeList[j](DiscFac = beta_set[j])
+    #EstTypeList[j].track_vars = ['mNrmNow', 'cNrmNow', 'pLvlNow']
 
-    # Get wealth quartile cutoffs and distribute them to each consumer type
-    quartile_cuts = getPercentiles(WealthNow,percentiles=[0.25,0.50,0.75])
-    for ThisType in EstTypeList:
-        WealthQ = np.zeros(ThisType.AgentCount,dtype=int)
-        for n in range(3):
-            WealthQ[ThisType.aLvlNow > quartile_cuts[n]] += 1
-        ThisType(WealthQ = WealthQ)
+# Solve and simulate all consumer types, then gather their wealth levels
+multiThreadCommands(EstTypeList,['solve()','initializeSim()','simulate(95)','unpackcFunc()'])
+WealthNow = np.concatenate([ThisType.aLvlNow for ThisType in EstTypeList])
 
+# Get wealth quartile cutoffs and distribute them to each consumer type
+quartile_cuts = getPercentiles(WealthNow,percentiles=[0.25,0.50,0.75])
+for ThisType in EstTypeList:
+    WealthQ = np.zeros(ThisType.AgentCount,dtype=int)
+    for n in range(3):
+        WealthQ[ThisType.aLvlNow > quartile_cuts[n]] += 1
+    ThisType(WealthQ = WealthQ)
+
+print('Done assigning wealth quartiles')
+
+# %%
+# Now for each type we want to simulate 4 periods and calculate MPCCs 
+# from consumptions with and without lottery winnings
+numPeriods = 4
+
+simulated_MPC_means = np.zeros((4,4,numPeriods))    # 3d array to store MPC matrices for t to t+n
+
+# Need a structure to keep track of how wealth evolves after the lottery win
+lotteryWealthMat = np.zeros((base_params['AgentCount'],4,numPeriods))
+lotteryWealthList = []
+for j in range(TypeCount):
+    lotteryWealthList.append(deepcopy(lotteryWealthMat))
+
+for n in range(numPeriods):
     # Keep track of MPC sets in lists of lists of arrays
     MPC_set_list = [ [[],[],[],[]],
                      [[],[],[],[]],
                      [[],[],[],[]],
                      [[],[],[],[]] ]
-    MPC_set_list_t1 = deepcopy(MPC_set_list)
-    MPC_set_list_t2 = deepcopy(MPC_set_list)
-    MPC_set_list_t3 = deepcopy(MPC_set_list)
 
-    Rfree = base_params['Rfree']
-    # Calculate the MPC for each of the four lottery sizes for all agents
     for ThisType in EstTypeList:
-        ThisType.simulate(4)
-        c_base_0 = ThisType.cNrmNow_hist[StartPeriod]
-        c_base_t1 = ThisType.cNrmNow_hist[StartPeriod+1]
-        c_base_t2 = ThisType.cNrmNow_hist[StartPeriod+2]
-        c_base_t3 = ThisType.cNrmNow_hist[StartPeriod+3]
-        
+        ThisType.simulate(1)
+        c_base = ThisType.cNrmNow
         MPC_this_type = np.zeros((ThisType.AgentCount,4))
-        MPC_this_type_t1 = np.zeros((ThisType.AgentCount,4))
-        MPC_this_type_t2 = np.zeros((ThisType.AgentCount,4))
-        MPC_this_type_t3 = np.zeros((ThisType.AgentCount,4))
-    
-        for k in range(4): # Get MPC for all agents of this type       
-            Llvl = lottery_size[k]
-            Lnrm = Llvl/ThisType.pLvlNow_hist[StartPeriod]     
-            SplurgeNrm = Splurge/ThisType.pLvlNow_hist[StartPeriod]
-            mAdj = ThisType.mNrmNow_hist[StartPeriod] + Lnrm - SplurgeNrm
-            cAdj = ThisType.cFunc[0](mAdj) + SplurgeNrm
-            MPC_this_type[:,k] = (cAdj - c_base_0) /Lnrm
-            
-            # Calculate normalized market resources in t+1 (varnames t1)
-            #Llvl = lottery_size[k]
-            Lnrm = Llvl/ThisType.pLvlNow_hist[StartPeriod+1]
-            aNrm_t0 = ThisType.mNrmNow_hist[StartPeriod] + Lnrm - cAdj
-            aLvl_t0 = aNrm_t0*ThisType.pLvlNow_hist[StartPeriod]
-            mLvl_t1 = aLvl_t0*Rfree + ThisType.TranShkNow_hist[StartPeriod+1]*ThisType.pLvlNow_hist[StartPeriod+1]
-            mNrm_t1 = mLvl_t1/ThisType.pLvlNow_hist[StartPeriod+1]
-            cNrm_t1 = ThisType.cFunc[0](mNrm_t1)
-            MPC_this_type_t1[:,k] = (cNrm_t1 - c_base_t1) /Lnrm
-
-            # Calculate normalized market resources in t+2 (varnames t2)
-            Llvl = lottery_size[k]
-            Lnrm = Llvl/ThisType.pLvlNow_hist[StartPeriod+2]
-            aNrm_t1 = mNrm_t1 - cNrm_t1;
-            aLvl_t1 = aNrm_t1*ThisType.pLvlNow_hist[StartPeriod+1]
-            mLvl_t2 = aLvl_t1*Rfree + ThisType.TranShkNow_hist[StartPeriod+2]*ThisType.pLvlNow_hist[StartPeriod+2]
-            mNrm_t2 = mLvl_t2/ThisType.pLvlNow_hist[StartPeriod+2]
-            cNrm_t2 = ThisType.cFunc[0](mNrm_t2)
-            MPC_this_type_t2[:,k] = (cNrm_t2 - c_base_t2) /Lnrm
-
-            # Calculate normalized market resources in t+3 (varnames t3)
-            Llvl = lottery_size[k]
-            Lnrm = Llvl/ThisType.pLvlNow_hist[StartPeriod+3]
-            aNrm_t2 = mNrm_t2 - cNrm_t2;
-            aLvl_t2 = aNrm_t2*ThisType.pLvlNow_hist[StartPeriod+2]
-            mLvl_t3 = aLvl_t2*Rfree + ThisType.TranShkNow_hist[StartPeriod+3]*ThisType.pLvlNow_hist[StartPeriod+3]
-            mNrm_t3 = mLvl_t3/ThisType.pLvlNow_hist[StartPeriod+3]
-            cNrm_t3 = ThisType.cFunc[0](mNrm_t3)
-            MPC_this_type_t3[:,k] = (cNrm_t3 - c_base_t3) /Lnrm
-            
-
+        for k in range(4): 
+            if n == 0: # Calculate the initial period MPCs 
+                Llvl = lottery_size[k]*0
+                Lnrm = Llvl/ThisType.pLvlNow
+                SplurgeNrm = Splurge/ThisType.pLvlNow
+                mAdj = ThisType.mNrmNow + Lnrm - SplurgeNrm
+                cAdj = ThisType.cFunc[0](mAdj) + SplurgeNrm
+                MPC_this_type[:,k] = (cAdj - c_base)#/Lnrm
+                # Store the resulting wealth after the lottery win
+                lotteryWealthList[ThisType.seed][:,k,n] = ThisType.mNrmNow + Lnrm - cAdj
+            else:      # Calculate MPCC after initial lottery win
+                       # by iterating last period's lottery wealth one period forward
+                Llvl = lottery_size[k]*0
+                Lnrm = Llvl/ThisType.pLvlNow
+                mAdjPrev = lotteryWealthList[ThisType.seed][:,k,n-1]
+                mAdjNew = mAdjPrev*base_params['Rfree']/ThisType.PermShkNow + ThisType.TranShkNow
+                cAdj = ThisType.cFunc[0](mAdjNew)
+                MPC_this_type[:,k] = (cAdj - c_base)#/Lnrm            
+                lotteryWealthList[ThisType.seed][:,k,n] = mAdjNew-cAdj
+                
         # Sort the MPCs into the proper MPC sets
         for q in range(4):
             these = ThisType.WealthQ == q
             for k in range(4):
                 MPC_set_list[k][q].append(MPC_this_type[these,k])
-                MPC_set_list_t1[k][q].append(MPC_this_type_t1[these,k])
-                MPC_set_list_t2[k][q].append(MPC_this_type_t2[these,k])
-                MPC_set_list_t3[k][q].append(MPC_this_type_t3[these,k])
 
     # Calculate average within each MPC set
-    simulated_MPC_means = np.zeros((4,4))
-    simulated_MPC_means_t1 = np.zeros((4,4))
-    simulated_MPC_means_t2 = np.zeros((4,4))
-    simulated_MPC_means_t3 = np.zeros((4,4))
     for k in range(4):
         for q in range(4):
             MPC_array = np.concatenate(MPC_set_list[k][q])
-            simulated_MPC_means[k,q] = np.mean(MPC_array)
-            simulated_MPC_means_t1[k,q] = np.mean(np.concatenate(MPC_set_list_t1[k][q]))
-            simulated_MPC_means_t2[k,q] = np.mean(np.concatenate(MPC_set_list_t2[k][q]))
-            simulated_MPC_means_t3[k,q] = np.mean(np.concatenate(MPC_set_list_t3[k][q]))
-            
-    print('The MPC for t+0 is \n', np.round(simulated_MPC_means,4))
-    print('\n')
-    print('The MPCC for t+1 is \n', np.round(simulated_MPC_means_t1,4))
-    print('\n')
-    print('The MPCC for t+2 is \n', np.round(simulated_MPC_means_t2,4))
-    print('\n')
-    print('The MPCC for t+3 is \n', np.round(simulated_MPC_means_t3,4))
-    
-    
-    import matplotlib.pyplot as plt
-    print('\n I plot as an example the evolution of the MPC in the 2nd quartile of wealth and lottery win.')
-    plt.plot([0, 1, 2, 3],[simulated_MPC_means[1,1],simulated_MPC_means_t1[1,1],simulated_MPC_means_t2[1,1],simulated_MPC_means_t3[1,1]])
-    plt.xlabel('Year')
-    plt.ylabel('MPCC')
-    plt.show(block=False)
-
-    # Calculate Euclidean distance between simulated MPC averages and Table 9 targets
-    diff = simulated_MPC_means - MPC_target
-    if drop_corner:
-        diff[0,0] = 0.0
-    distance = np.sqrt(np.sum((diff)**2))
-    return distance
-
-dist = FagerengFutureObjFunc(opt_params[0],opt_params[1],True)
+            simulated_MPC_means[k,q, n] = np.mean(MPC_array)
 
 # %%
+print(np.round(simulated_MPC_means[:,:,0],4))
+print(np.round(simulated_MPC_means[:,:,1],4))
+print(np.round(simulated_MPC_means[:,:,2],4))
+print(np.round(simulated_MPC_means[:,:,3],4))
+
+
+# %%
+import matplotlib.pyplot as plt
+
+for lottSize in range(4):
+    plt.subplot(2,2,lottSize+1)
+    for q in range(4):
+        labStr = "Wealth Q=" + str(q)
+        plt.plot(simulated_MPC_means[lottSize,q,:], label=labStr)
+        plt.xticks(ticks=range(4))
+    plt.title('Lottery size = %d' %lottSize)
+plt.subplots_adjust(hspace=0.6, wspace=0.4)
+# plt.legend(loc='best')
+plt.show()

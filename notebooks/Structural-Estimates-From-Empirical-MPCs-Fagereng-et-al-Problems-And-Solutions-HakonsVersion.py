@@ -272,7 +272,7 @@ for j in range(TypeCount):
     #EstTypeList[j].track_vars = ['mNrmNow', 'cNrmNow', 'pLvlNow']
 
 # Solve and simulate all consumer types, then gather their wealth levels
-multiThreadCommands(EstTypeList,['solve()','initializeSim()','simulate(95)','unpackcFunc()'])
+multiThreadCommands(EstTypeList,['solve()','initializeSim()','simulate()','unpackcFunc()'])
 WealthNow = np.concatenate([ThisType.aLvlNow for ThisType in EstTypeList])
 
 # Get wealth quartile cutoffs and distribute them to each consumer type
@@ -342,13 +342,13 @@ for n in range(numPeriods):
             simulated_MPC_means[k,q, n] = np.mean(MPC_array)
             
 
-print('The MPC for t+0 is \n', simulated_MPC_means[:][:][0])
+print('The MPC for t+0 is \n', simulated_MPC_means[:,:,0])
 print('\n')
-print('The MPCC for t+1 is \n', simulated_MPC_means[:][:][1])
+print('The MPCC for t+1 is \n', simulated_MPC_means[:,:,1])
 print('\n')
-print('The MPCC for t+2 is \n', simulated_MPC_means[:][:][2])
+print('The MPCC for t+2 is \n', simulated_MPC_means[:,:,2])
 print('\n')
-print('The MPCC for t+3 is \n', simulated_MPC_means[:][:][3])
+print('The MPCC for t+3 is \n', simulated_MPC_means[:,:,3])
 
 # %%
 import matplotlib.pyplot as plt
@@ -363,5 +363,3 @@ for lottSize in range(4):
 plt.subplots_adjust(hspace=0.6, wspace=0.4)
 # plt.legend(loc='best')
 plt.show()
-
-# %%
