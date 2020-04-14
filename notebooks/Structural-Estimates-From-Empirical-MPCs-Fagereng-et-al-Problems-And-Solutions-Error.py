@@ -97,11 +97,7 @@ for j in range(TypeCount):
 # %% code_folding=[]
 # Define the objective function
 
-#def FagerengObjFunc(center,spread,verbose=False):
-#def FagerengObjFunc(center,verbose=False):    
-def FagerengObjFuncSP(SplurgeIn,center,spread,verbose=False):    
-    Splurge=SplurgeIn
-    
+def FagerengObjFunc(center,spread,verbose=False):
     '''
     Objective function for the quick and dirty structural estimation to fit
     Fagereng, Holm, and Natvik's Table 9 results with a basic infinite horizon
@@ -122,7 +118,6 @@ def FagerengObjFuncSP(SplurgeIn,center,spread,verbose=False):
     distance : float
         Euclidean distance between simulated MPCs and (adjusted) Table 9 MPCs.
     '''
-        
     # Give our consumer types the requested discount factor distribution
     beta_set = approxUniform(N=TypeCount,bot=center-spread,top=center+spread)[1]
     for j in range(TypeCount):
@@ -184,8 +179,7 @@ def FagerengObjFuncSP(SplurgeIn,center,spread,verbose=False):
     if verbose:
         print(simulated_MPC_means)
     else:
-        #print (center, spread, distance)
-        print (SplurgeIn, distance)
+        print (center, spread, distance)
     return distance
 
 
@@ -194,28 +188,10 @@ def FagerengObjFuncSP(SplurgeIn,center,spread,verbose=False):
 
 guess = [0.85,0.1]
 f_temp = lambda x : FagerengObjFunc(x[0],x[1])
-#guess = [0.85]
-#f_temp = lambda x : FagerengObjFunc(x[0])
-
 opt_params = minimizeNelderMead(f_temp, guess, verbose=True)
 print('Finished estimating for scaling factor of ' + str(AdjFactor) + ' and "splurge amount" of $' + str(1000*Splurge))
 print('Optimal (beta,nabla) is ' + str(opt_params) + ', simulated MPCs are:')
-
 dist = FagerengObjFunc(opt_params[0],opt_params[1],True)
-#dist = FagerengObjFunc(opt_params[0],True)
-print('Distance from Fagereng et al Table 9 is ' + str(dist))
-
-# %%
-# Conduct the estimation of the splurge given the estimation of beta,nabla
-
-opt_estimates = [0.86420188, 0.0997059]
-
-SPguess = [0.7]
-f_temp = lambda x : FagerengObjFuncSP(x[0], opt_estimates[0],opt_estimates[1])
-opt_Splurge = minimizeNelderMead(f_temp, SPguess, verbose=True)
-print('Finished estimating for scaling factor of ' + str(AdjFactor) + ' and "(beta,nabla)" of ' + str(opt_estimates))
-print('Optimal Splurge is $' + str(1000*opt_Splurge) + ', simulated MPCs are:')
-dist = FagerengObjFuncSP(opt_Splurge[0],opt_estimates[0],opt_estimates[1], True)
 print('Distance from Fagereng et al Table 9 is ' + str(dist))
 
 # %% [markdown]
@@ -340,7 +316,7 @@ for j in range(TypeCount):
     #EstTypeList[j].track_vars = ['mNrmNow', 'cNrmNow', 'pLvlNow']
 
 # Solve and simulate all consumer types, then gather their wealth levels
-multiThreadCommands(EstTypeList,['solve()','initializeSim()','simulate(95)','unpackcFunc()'])
+multiThreadCommands(EstTypeList,['solve()','initializeSim()','simulate(105)','unpackcFunc()'])
 WealthNow = np.concatenate([ThisType.aLvlNow for ThisType in EstTypeList])
 
 # Get wealth quartile cutoffs and distribute them to each consumer type
