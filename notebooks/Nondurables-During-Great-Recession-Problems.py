@@ -15,7 +15,7 @@
 # ---
 
 # %% [markdown]
-# # Spending on Nondurables During the Great 
+# # Spending on Nondurables During the Great Recession
 #
 # <p style="text-align: center;"><small><small><small>Generator: QuARK-make/notebooks_byname</small></small></small></p>
 
@@ -33,17 +33,25 @@ from copy import deepcopy
 
 import HARK # Prevents import error from Demos repo
 from HARK.utilities import plotFuncs
+# Choose some calibrated parameters that roughly match steady state 
 
 # %% [markdown]
 # ### There Was a Big Drop in Consumption ... 
-# Between the second and fourth quarters of 2018, nondurables consumption spending in the U.S. dropped by an unprecedented 6.4 percent.  High frequency data show a drop in retail sales of something like 10 percent between the weekend before the Lehmann collapse and the weekend after Lehmann.  
+# Between the second and fourth quarters of 2018, "discretionary" spending on nondurables and services in the U.S. dropped by about 4 percent -- an unprecedented collapse.  Subsequent analyses of the Great Recession concluded that it was the large drop in consumption expenditures that turned what would otherwise have been a moderate downturn into the largest economic decline since the Great Depresssion.
+#
+# <!-- Following Blinder and Deaton (1987), we exclude clothing and shoes from the "nondurables" category.  By "discretionary" services, we mean those that are not mostly predetermined or imputed from other data: Specifically: recreation services, and food services and accommodations.  Data accessed on 2020-03-27 are from https://apps.bea.gov/iTable/iTable.cfm?ReqID=19&step=2#reqid=19&step=2&isuri=1&1921=underlying
+#
+# Q2: (770.703+789.047+421.153+621.281+391.462)
+# Q4: (773.038+786.175+302.043+621.773+387.206)
+# (Q4-Q2)/Q2=0.0412
+# -->
 
 # %% [markdown]
 # ### ... and Uncertainty Could Induce A Drop In Consumption ...  
 # Increased "uncertainty" has become a popular explanation of much of what happened in the Great Recession -- including this drop.  Qualitatively, it is well known that a perceived increase in labor income uncertainty should induce more saving (less consumption) for precautionary reasons.
 #
 # ### ... But Is the Story _Quantitatively_ Plausible?
-# But if explaining a 6.4 percent drop in consumption would require an implausibly large increase in uncertainty, the story that uncertainty explains the consumption drop is implausible.  
+# But if explaining a 4 percent drop in discretionary consumption would require an implausibly large increase in uncertainty, the story that uncertainty explains the consumption drop is implausible.  
 #
 # ### Transitory Shocks, Permanent Shocks, or Unemployment
 # The $\texttt{ConsIndShockConsumerType}$ model incorporates three kinds of uncertainty: Unemployment spells, during which income is reduced to some small proportion of its normal level; and, for consumers who remain employed, transitory and permanent shocks with standard deviations $\sigma_{\theta}$ and $\sigma_{\psi}$.  
@@ -61,49 +69,52 @@ from HARK.utilities import plotFuncs
 #
 
 # %% {"code_folding": [1]}
-# Choose some calibrated parameters that roughly match steady state 
-init_infinite = {
-    "CRRA":1.0,                    # Coefficient of relative risk aversion 
-    "Rfree":1.01/(1.0 - 1.0/240.0), # Survival probability,
-    "PermGroFac":[1.000**0.25], # Permanent income growth factor (no perm growth),
-    "PermGroFacAgg":1.0,
-    "BoroCnstArt":0.0,
-    "CubicBool":False,
-    "vFuncBool":False,
-    "PermShkStd":[(0.01*4/11)**0.5],  # Standard deviation of permanent shocks to income
-    "PermShkCount":7,  # Number of points in permanent income shock grid
-    "TranShkStd":[(0.01*4)**0.5],  # Standard deviation of transitory shocks to income,
-    "TranShkCount":5,  # Number of points in transitory income shock grid
-    "UnempPrb":0.07,  # Probability of unemployment while working
-    "IncUnemp":0.15,  # Unemployment benefit replacement rate
-    "UnempPrbRet":None,
-    "IncUnempRet":None,
-    "aXtraMin":0.00001,  # Minimum end-of-period assets in grid
-    "aXtraMax":20,  # Maximum end-of-period assets in grid
-    "aXtraCount":20,  # Number of points in assets grid,
-    "aXtraExtra":[None],
-    "aXtraNestFac":3,  # Number of times to 'exponentially nest' when constructing assets grid
-    "LivPrb":[1.0 - 1.0/240.0],  # Survival probability
-    "DiscFac":0.97,             # Default intertemporal discount factor, # dummy value, will be overwritten
-    "cycles":0,
-    "T_cycle":1,
-    "T_retire":0,
-    'T_sim':2000,  # Number of periods to simulate (idiosyncratic shocks model, perpetual youth)
-    'T_age':1000,
-    'IndL': 10.0/9.0,  # Labor supply per individual (constant),
-    'aNrmInitMean':np.log(0.00001),
-    'aNrmInitStd':0.0,
-    'pLvlInitMean':0.0,
-    'pLvlInitStd':0.0,
-    'AgentCount':10000,
-}
+from HARK.ConsumptionSaving.ConsIndShockModel import init_idiosyncratic_shocks
+init_idiosyncratic_shocks_agg_SS = deepcopy(init_idiosyncratic_shocks)
+
+# %% {"code_folding": [1]}
+# Calibrated and calculated parameters
+
+PermShkVarAnn   = 0.01 # var of annual perm shk from Carroll (1992)
+TranShkVarAnn   = 0.01 # var of annual tran shk from Carroll (1992)
+TranShkStd      = (0.01*4)**0.5         # Converts ann var to qtr std for tran
+PermShkStd      = (0.01*4/11)**0.5      # Converts ann var to qtr std for perm
+PermGroFacAnn   = 1.00                  # No underlying annual idiosyncratic permanent income growth
+PermGroFac      = PermGroFacAnn**0.25 # Quarterly idiosyncratic permanent income growth factor
+Rfree           = 1.01/(1.0 - 1.0/240.0)# Extra idiosyncratic interest comes from Blanchard (1985) insurance 
+LivPrb          = 1.0 - 1.0/240.0       # Expected life of 240 quarters = 60 years + born at 25 = lifespan 85
+PermLogLevVarSS = (PermShkStd**2)/(1.0-(LivPrb**2.)*(PermGroFac**2.)) # Variance of SS dist of perm inc in levels
+
+# %% {"code_folding": [1]}
+init_idiosyncratic_shocks_agg_SS['CRRA']  = 1.0                       # Log utility
+init_idiosyncratic_shocks_agg_SS['Rfree'] = 1.01/(1.0 - 1.0/240.0)   # 240 quarters = 60 years + start life at 25
+init_idiosyncratic_shocks_agg_SS['PermGroFac'] = [PermGroFac]        # Calculated above
+init_idiosyncratic_shocks_agg_SS['PermGroFacAgg'] = 1.0              # No aggregate permanent growth
+init_idiosyncratic_shocks_agg_SS['PermShkStd'] = [PermShkStd]        # std perm shocks (cstwMPC; 0.01 annually)
+init_idiosyncratic_shocks_agg_SS['TranShkStd'] = [TranShkStd]        # std trans shocks to income,
+init_idiosyncratic_shocks_agg_SS['UnempPrb'] = 0.07                  # Prob becoming unemp if currently emp
+init_idiosyncratic_shocks_agg_SS['IncUnemp'] = 0.15                  # UI replacement rate
+init_idiosyncratic_shocks_agg_SS['UnempPrbRet'] = None              # Benefits cannot be taken away after retirement
+init_idiosyncratic_shocks_agg_SS['LivPrb'] = [LivPrb]                # Calculated above
+init_idiosyncratic_shocks_agg_SS['DiscFac'] = 0.97             # Default intertemporal discount factor, # dummy value, will be overwritten
+init_idiosyncratic_shocks_agg_SS['cycles'] = 0
+init_idiosyncratic_shocks_agg_SS['T_cycle'] = 1
+init_idiosyncratic_shocks_agg_SS['T_sim'] = 2000  # Number of periods to simulate (idiosyncratic shocks model, perpetual youth)
+init_idiosyncratic_shocks_agg_SS['T_retire'] = 0  # Kill people off if they live this many periods or more
+init_idiosyncratic_shocks_agg_SS['T_age'] = 1000  # Kill people off if they live this many periods or more
+init_idiosyncratic_shocks_agg_SS['IndL'] =  10.0/9.0# Labor supply per individual (constant)
+init_idiosyncratic_shocks_agg_SS['aNrmInitMean'] = np.log(0.00001), # Everyone starts with (nearly) zero assets
+init_idiosyncratic_shocks_agg_SS['aNrmInitStd'] = 0.0
+init_idiosyncratic_shocks_agg_SS['pLvlInitMean'] = 0.0
+init_idiosyncratic_shocks_agg_SS['pLvlInitStd'] = PermLogLevVarSS**0.5 # Variance of SS distribution of permanent income
+init_idiosyncratic_shocks_agg_SS['AgentCount'] = 10000 # Num people to sim
 
 # %% [markdown]
 # Now we import the class itself and make a baseline type.
 
 # %%
 from HARK.ConsumptionSaving.ConsIndShockModel import IndShockConsumerType
-BaselineType = IndShockConsumerType(**init_infinite)
+BaselineType = IndShockConsumerType(**init_idiosyncratic_shocks_agg_SS)
 
 # %% [markdown]
 # For this exercise, we will introduce _ex ante_ heterogeneity, so the baseline type will be copied several times.
@@ -128,15 +139,16 @@ for nn in range(num_consumer_types):
 # Seven types is enough to approximate the uniform distribution (5 is not quite enough)
 from HARK.utilities import approxUniform
 
-# Calibrations from cstwMPC
-bottomDiscFac  = 0.9800
-topDiscFac     = 0.9934
+# Calibrations from cstwMPC, Table 3, http://www.econ2.jhu.edu/people/ccarroll/papers/cstwMPC/#TBL-4-1-1
+# are for the version of the modelt that matches the distribution of liquid assets
+bottomDiscFac  = 0.9637-0.0133
+topDiscFac     = 0.9637+0.0133
 DiscFac_list   = approxUniform(N=num_consumer_types,bot=bottomDiscFac,top=topDiscFac)[1]
 
 # Now, assign the discount factors
 for j in range(num_consumer_types):
     ConsumerTypes[j].DiscFac = DiscFac_list[j]
-    ConsumerTypes[j].quiet   = True # Turn off some output
+    ConsumerTypes[j].quiet   = True # Turn off some unwanted output
 
 # %% [markdown]
 # Our agents now exist and have a concept of the problem they face, but we still need them to solve that problem.
@@ -261,7 +273,7 @@ def calcConsChangeAfterUnempPrbChange(newVals):
 # %% {"code_folding": [0]}
 # Calculate the consequences of an "MIT shock" to the standard deviation of permanent shocks
 ratio_min = 0.8 # minimum number to multiply uncertainty parameter by
-TargetChangeInC = -6.3 # Source: FRED
+TargetChangeInC = -4.1 # Source: see comment above
 num_points = 10 # number of parameter values to plot in graphs. More=slower
 
 # First change the variance of the permanent income shock
@@ -279,13 +291,24 @@ plt.hlines(TargetChangeInC,perm_min,perm_max)
 plotFuncs([calcConsChangeAfterPermShkChange],perm_min,perm_max,N=num_points)
 
 # %% [markdown]
-# The figure shows that if people's beliefs about the standard deviation of permanent shocks to their incomes had changed from 0.06 (the default value) to about 0.012, the model would predict an immediate drop in consumption spending of about the magnitude seen in 2008.  
+# The figure shows that if people's beliefs about the standard deviation of permanent shocks to their incomes had changed from 0.06 (the default value) to about 0.014, the model would predict an immediate drop in consumption spending of about the magnitude seen in 2008.  
 #
-# The question is whether this is a reasonable or an unreasonable magnitude for a change in uncertainty.  Some perspective on that question is offered by the large literature that attempts to estimate the magnitude of persistent or permanent shocks to household income.  The answer varies substantially across household types, countries, and time periods, but our sense of the literature is that the whole span of the territory between 0.04 and ranging nearly up to 0.20 is well populated (in the sense that substantial populations of people or countries have been estimated to experience shocks of this magnitude).
+# The question at hand is whether this is a reasonable or an unreasonable magnitude for a change in uncertainty.  Some perspective on that question is offered by the large literature that attempts to estimate the magnitude of persistent or permanent shocks to household income.  The answer varies substantially across household types, countries, and time periods, but our sense of the literature is that the whole span of the territory between 0.04 and ranging nearly up perhaps 0.16 is well populated (in the sense that substantial numbers of people or countries have been estimated to experience shocks of this magnitude).
 #
-# So, the degree to which income uncertainty would have had to rise in order to explain the drop in consumption in the Great Recession is quite moderate, compared to the variation that is estimated already to exist across people, places, times, and countries.
+# The conclusion is that, in order for an increase in permanent income uncertainty to explain the entire drop in consumption spending, uncertainty in permanent income would have to have roughly doubled between Q2 and Q4 of 2008.  While this seems rather a large increase in uncertainty, it is by no means an absurdly large increase.  And, there is no reason to rule out the possibility that people perceived a likely change in the _level_ of their permanent income as well, which of course would translate one-for-one into a change in the appropriate level of consumption.  
+#
+# The point is that it is not at all implausible, as a quantitative proposition, that an increase in uncertainty could have been responsible for a substantial portion of the decline in nondurable expenditures in the Great Recesssion.  (And it is even easier for an increase in uncertainty to induce a decline in durable goods purchases.
 
 # %% [markdown]
 # ### PROBLEM
 #
 # Compute the change in transitory uncertainty and of unemployment risk that would be sufficient to make consumption fall by the appropriate amount (by making a figure similar to the one above). Brifely explain your results in intuitive terms, and discuss the implications for the measurement and interpretation of measures of "uncertainty" in consumer surveys.
+
+# %% [markdown]
+# ### PROBLEM
+#
+# During the Coronavirus pandemic of 2020, many governments issued "lockdown" orders to their populations to deter the spread of the disease.  A consequence was that many industries that require in-person interaction (like restaurants) had no work for their employees.  A number of governments passed "stimulus" packages that included one-time cash payments to their citizens, as a crude way to get money to people who might otherwise have faced severe financial distress.
+#
+# Use the toolkit to perform an exercise designed to make a rough calculation of how such stimulus payments might affect the dynamics of aggregate consumption expenditures.  To do this, you will want to use the `ConsPrefShock` model, which allows for a temporary shock to the utility from consumption that can be used to model a one-quarter closing of restaurants and other retail businesses (your marginal utility of spending money on restaurants goes to zero if the restaurants are closed!).  
+#
+# In more detail, you might incorporate a negative marginal utility shock of 10 percent in the quarter when the pandemic recession hits, followed by a full bounceback of marginal utility to its normal state one quarter later.  And, I suggest you incorporate a stimulus payment of about 5 percent of annual income for a typical consumer.  Your task is to show the path of consumer spending leading up to the pandemic quarter (which should be flat, since the pandemic is unanticipated), and then the path during the pandemic quarter and in the several quarters after it.
