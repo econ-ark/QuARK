@@ -2,8 +2,10 @@
 # ---
 # jupyter:
 #   jupytext:
-#     cell_metadata_filter: ExecuteTime,autoscroll,heading_collapsed,hidden,-hide_ouput,-code_folding
+#     cell_metadata_filter: ExecuteTime,autoscroll,heading_collapsed,hidden,slideshow,-hide_ouput,-code_folding
+#     cell_metadata_json: true
 #     formats: ipynb,py:percent
+#     notebook_metadata_filter: all
 #     text_representation:
 #       extension: .py
 #       format_name: percent
@@ -13,6 +15,16 @@
 #     display_name: Python 3
 #     language: python
 #     name: python3
+#   language_info:
+#     codemirror_mode:
+#       name: ipython
+#       version: 3
+#     file_extension: .py
+#     mimetype: text/x-python
+#     name: python
+#     nbconvert_exporter: python
+#     pygments_lexer: ipython3
+#     version: 3.7.4
 # ---
 
 # %% [markdown]
@@ -42,12 +54,10 @@ from copy import deepcopy
 
 # Plotting tools
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import plot, draw, show
 
 # The warnings package allows us to ignore some harmless but alarming warning messages
 import warnings
 warnings.filterwarnings("ignore")
-
 
 # Code to allow a master "Generator" and derived "Generated" versions
 #   - allows "$nb-Problems-And-Solutions → $nb-Problems → $nb"
@@ -78,7 +88,7 @@ if not find_gui():
     saveFigs = True
 
 # this can be removed if we pass in saveFigs and drawFigs in every call to make('figure')
-def make(figure_name, target_dir="Figures"):
+def make(figure_name, target_dir="../../Figures"):
     make_figs(figure_name, saveFigs, drawFigs, target_dir)
 
 # %%
@@ -100,8 +110,8 @@ from HARK.utilities import plotFuncsDer, plotFuncs
 # | $\rho$ | Coeﬃcient of Relative Risk Aversion| $\texttt{CRRA}$ | 2 |
 # | $\wp$ | Probability of Unemployment | $\texttt{UnempPrb}$ | 0.005 |
 # | $\theta^{\large u}$ | Income when Unemployed | $\texttt{IncUnemp}$ | 0. |
-# | $\psiStd$ | Std Dev of Log Permanent Shock| $\texttt{PermShkStd}$ | 0.1 |
-# | $\ThetaStd$ | Std Dev of Log Transitory Shock| $\texttt{TranShkStd}$ | 0.1 |
+# | $\sigma_\psi$ | Std Dev of Log Permanent Shock| $\texttt{PermShkStd}$ | 0.1 |
+# | $\sigma_\theta$ | Std Dev of Log Transitory Shock| $\texttt{TranShkStd}$ | 0.1 |
 
 # %% [markdown]
 # For a microeconomic consumer who begins period $t$ with __**m**__arket resources boldface $\mathbf{m}_{t}$ (=net worth plus current income), the amount that remains after __**c**__onsumption of $\mathbf{c}_{t}$ will be end-of-period __**A**__ssets $\mathbf{a}_{t}$, 
@@ -186,7 +196,7 @@ baseAgent_Fin = IndShockConsumerType(**base_params)
 baseAgent_Fin.cycles = 100   # Set finite horizon (T = 100)
 
 baseAgent_Fin.solve()        # Solve the model
-baseAgent_Fin.unpackcFunc()  # Make the consumption function easily accessible
+baseAgent_Fin.unpack('cFunc')  # Make the consumption function easily accessible
 
 
 # %%
@@ -380,6 +390,7 @@ GIC_fails_dictionary['PermGroFac'] = [1.00]
 
 GICFailsExample = IndShockConsumerType(
     cycles=0, # cycles=0 makes this an infinite horizon consumer
+    verbose=0, # by deafult, check conditions shouldn't print out any information
     **GIC_fails_dictionary)
 
 
@@ -392,7 +403,7 @@ GICFailsExample = IndShockConsumerType(
 # The checkConditions method does what it sounds like it would
 # verbose=0: Print nothing;
 # verbose=3: Print all available info
-GICFailsExample.checkConditions(verbose=3)
+GICFailsExample.checkConditions(verbose=0)
 
 # %% [markdown]
 # ### The Sustainable Level of Consumption
@@ -429,7 +440,7 @@ EmDelEq0      = lambda m : 1 + (m-1)*(ErNrmRte/ERNrmFac)  # "sustainable" c wher
 # Plot GICFailsExample consumption function against the sustainable level of consumption
 
 GICFailsExample.solve()        # Above, we set up the problem but did not solve it
-GICFailsExample.unpackcFunc()  # Make the consumption function easily accessible for plotting
+GICFailsExample.unpack('cFunc')  # Make the consumption function easily accessible for plotting
 m = np.linspace(mPlotMin,5,mPts)
 c_Limt = GICFailsExample.cFunc[0](m)
 c_Sstn = EmDelEq0(m) # "sustainable" consumption
@@ -453,13 +464,13 @@ plt.arrow(2.2,1.2,0.3,-0.05,head_width= 0.02,width=0.001,facecolor='black',lengt
 make('FVACnotGIC') # Save figures (if appropriate/possible)
 
 # %% [markdown]
-# In the [interactive dashboard](#interactive-dashboard), see what happens as changes in the time preference rate (or changes in risk $\PsiStd$) change the consumer from _growth-patient_ $(\Phi > \tilde{\Gamma})$ to _growth-impatient_ ($\Phi < \tilde{\Gamma}$)
+# In the [interactive dashboard](#interactive-dashboard), see what happens as changes in the time preference rate (or changes in risk $\sigma_\Psi$) change the consumer from _growth-patient_ $(\Phi > \tilde{\Gamma})$ to _growth-impatient_ ($\Phi < \tilde{\Gamma}$)
 
 # %%
 # Conditions can also be checked without solving the model
 # verbose=0: Print nothing
 # verbose=3: Print all available results
-GICFailsExample.checkConditions(verbose=3)  
+GICFailsExample.checkConditions(verbose=0)  
 
 
 # %% [markdown]
@@ -468,20 +479,22 @@ GICFailsExample.checkConditions(verbose=3)
 
 # %%
 # cycles=0 tells the solver to find the infinite horizon solution
-baseAgent_Inf = IndShockConsumerType(cycles=0,**base_params)
+baseAgent_Inf = IndShockConsumerType(cycles=0,verbose=0, **base_params)
 
 baseAgent_Inf.solve()
-baseAgent_Inf.unpackcFunc()
+baseAgent_Inf.unpack('cFunc')
 
 # %% [markdown]
 # ### [Target $m$, Expected Consumption Growth, and Permanent Income Growth](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#AnalysisoftheConvergedConsumptionFunction)
 #
 # The next figure, [Analysis of the Converged Consumption Function](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#cGroTargetFig), shows the expected consumption growth factor $\mathrm{\mathbb{E}}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}]$ for a consumer behaving according to the converged consumption rule.
 #
-# Conveniently, this can be computed without knowing the _level_ of the consumer's income.  Suppose that, after consumption decisions have been made for period $t$, news arrives about forthcoming "stimulus payments" (to take a typical thought experiment.
+# Conveniently, this can be computed without knowing the _level_ of the consumer's income:
 #
 # \begin{eqnarray}
-# \mathbf{c}_{t+1}/\mathbf{c}_{t} & = & \mathbf{p}_{t+1}\mathbf{c}_{t+1}(m_{t+1})
+# \mathbb{E}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}] & = & \mathbb{E}_{t}\left[\frac{\mathbf{p}_{t+1}c_{t+1}(m_{t+1})}{\mathbf{p}_{t}c_{t}(m_{t})}\right] \\ 
+# & = & \mathbb{E}_{t}\left[\frac{\Gamma \psi_{t+1} \mathbf{p}_{t}}{\mathbf{p}_{t}}\frac{c_{t+1}(m_{t+1})}{c_{t}(m_{t})}\right] \\
+# & = & \mathbb{E}_{t}\left[\frac{\Gamma \psi_{t+1} c_{t+1}(m_{t+1})}{c_{t}(m_{t})}\right] 
 # \end{eqnarray}
 #
 
@@ -659,25 +672,27 @@ ax.plot(mAbveTrg,EcGro_For_mAbveTrg,color="black")
 # Plot the arrows
 arrowplot(ax, mBelwTrg,EcGro_For_mBelwTrg)
 arrowplot(ax, mAbveTrg,EcGro_For_mAbveTrg, direc='pos')
+fsbig=26
+fsmid=22
 
 # Plot the target m
 ax.plot([mNrmTrg,mNrmTrg],[0,1.4],color="black",linestyle="--")
 ax.set_xlim(1,2.10)
 ax.set_ylim(0.98,1.08)
-ax.text(1,1.082,"Growth Rate",fontsize = 26,fontweight='bold')
-ax.text(2.105,0.975,"$m_{t}$",fontsize = 26,fontweight='bold')
+ax.text(1,1.082,r'$\text{Growth Rate}$',fontsize = fsbig,fontweight='bold')
+ax.text(2.105,0.975,"$m_{t}$",fontsize = fsbig,fontweight='bold')
 if latexExists:
-    ax.text(1.91,1.01,"$\mathbb{E}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}]$",fontsize = 22,fontweight='bold')
+    ax.text(1.91,1.01,"$\mathbb{E}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}]$",fontsize = fsmid,fontweight='bold')
 else:
-    ax.text(1.91,1.01,"$\mathsf{E}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}]$",fontsize = 22,fontweight='bold')
-ax.text(mNrmTrg-0.02,0.974, r'$\check{m}$', fontsize = 26,fontweight='bold')
+    ax.text(1.91,1.01,"$\mathsf{E}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}]$",fontsize = fsmid,fontweight='bold')
+ax.text(mNrmTrg-0.02,0.974, r'$\check{m}$', fontsize = fsbig,fontweight='bold')
 ax.tick_params(labelbottom=False, labelleft=False,left='off',right='off',bottom='off',top='off')
 if latexExists:
-    ax.text(1.91,0.998,r'$\pmb{\text{\TH}} = (\mathsf{R}\beta)^{1/\rho}$',fontsize = 22,fontweight='bold')
+    ax.text(1.91,0.998,r'$\pmb{\text{\TH}} = (\mathsf{R}\beta)^{1/\rho}$',fontsize = fsmid,fontweight='bold')
 else:
-    ax.text(1.91,0.998,r'$\Phi = (\mathsf{\mathsf{R}}\beta)^{1/\rho}$',fontsize = 22,fontweight='bold')
+    ax.text(1.91,0.998,r'$\Phi = (\mathsf{\mathsf{R}}\beta)^{1/\rho}$',fontsize = fsmid,fontweight='bold')
 
-ax.text(1.91,1.03, r'$\Gamma$',fontsize = 22,fontweight='bold')
+ax.text(1.91,1.03, r'$\Gamma$',fontsize = fsmid,fontweight='bold')
 make('cGroTargetFig')
 
 
@@ -868,3 +883,38 @@ make('MPCLimits')
 #    1. `git clone https://github.com/econ-ark/REMARK --recursive`
 #    1. `cd REMARK/REMARKs/BufferStockTheory`
 #    1. `jupyter notebook BufferStockTheory.ipynb`
+
+# %% [markdown]
+# ### Appendix: Perfect foresight agent failing both the FHWC and RIC
+
+# %%
+from copy import copy
+from HARK.ConsumptionSaving.ConsIndShockModel import PerfForesightConsumerType
+fig6_par = copy(base_params)
+
+# Replace parameters.
+fig6_par['Rfree'] = 0.98
+fig6_par['DiscFac'] = 1
+fig6_par['PermGroFac'] = [0.99]
+fig6_par['CRRA'] = 2
+fig6_par['BoroCnstArt']  = 0
+fig6_par['T_cycle'] = 0
+fig6_par['cycles'] = 0
+fig6_par['quiet'] = False
+
+# Create the agent
+RichButPatientAgent = PerfForesightConsumerType(**fig6_par)
+# Check conditions
+RichButPatientAgent.checkConditions(verbose = 3)
+# Solve
+RichButPatientAgent.solve()
+
+# Plot
+mPlotMin, mPlotMax = 1, 9.5
+plt.figure(figsize = (8,4))
+m_grid = np.linspace(mPlotMin,mPlotMax,500)
+plt.plot(m_grid-1, RichButPatientAgent.solution[0].cFunc(m_grid), color="black")
+plt.text(mPlotMax-1+0.05,1,r"$b$",fontsize = 26)
+plt.text(mPlotMin-1,1.017,r"$c$",fontsize = 26)
+plt.xlim(mPlotMin-1,mPlotMax-1)
+plt.ylim(mPlotMin,1.016)
