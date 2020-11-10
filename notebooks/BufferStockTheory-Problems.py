@@ -24,7 +24,23 @@
 #     name: python
 #     nbconvert_exporter: python
 #     pygments_lexer: ipython3
-#     version: 3.7.4
+#     version: 3.6.9
+#   latex_envs:
+#     LaTeX_envs_menu_present: true
+#     autoclose: false
+#     autocomplete: false
+#     bibliofile: biblio.bib
+#     cite_by: apalike
+#     current_citInitial: 1
+#     eqLabelWithNumbers: true
+#     eqNumInitial: 1
+#     hotkeys:
+#       equation: Ctrl-E
+#       itemize: Ctrl-I
+#     labels_anchors: false
+#     latex_user_defs: false
+#     report_style_numbering: false
+#     user_envs_cfg: false
 # ---
 
 # %% [markdown]
@@ -918,3 +934,7 @@ plt.text(mPlotMax-1+0.05,1,r"$b$",fontsize = 26)
 plt.text(mPlotMin-1,1.017,r"$c$",fontsize = 26)
 plt.xlim(mPlotMin-1,mPlotMax-1)
 plt.ylim(mPlotMin,1.016)
+
+make('PFGICHoldsFHWCFailsRICFails')
+
+# %%
