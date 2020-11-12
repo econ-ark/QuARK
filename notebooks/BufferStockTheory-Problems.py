@@ -128,15 +128,26 @@ from HARK.utilities import plotFuncsDer, plotFuncs
 # | $\theta^{\large u}$ | Income when Unemployed | $\texttt{IncUnemp}$ | 0. |
 # | $\sigma_\psi$ | Std Dev of Log Permanent Shock| $\texttt{PermShkStd}$ | 0.1 |
 # | $\sigma_\theta$ | Std Dev of Log Transitory Shock| $\texttt{TranShkStd}$ | 0.1 |
+#
+# that define the preferences and environment of microeconomic consumers as detailed below. 
+#
+# The objective of such a consumer with a horizon of $n$ periods is to maximize the value obtained from the stream of consumption __**c**__ from period $t=T-n$ to a terminal period $T$:
+#
+# \begin{equation}
+# \mathbf{v}_{t} = \sum_{i=0}^{n} \beta^{n}\mathrm{u}(\mathbf{c}_{t+n}) 
+# \end{equation}
+#
+# The infinite-horizon solution to the model is defined as the limit of the solution in the first period of life $\mathrm{c}_{T-n}$ as the horizon $n$ goes to infinity.
 
 # %% [markdown]
-# For a microeconomic consumer who begins period $t$ with __**m**__arket resources boldface $\mathbf{m}_{t}$ (=net worth plus current income), the amount that remains after __**c**__onsumption of $\mathbf{c}_{t}$ will be end-of-period __**A**__ssets $\mathbf{a}_{t}$, 
+# ### Details
+# For a microeconomic consumer who begins period $t$ with __**m**__arket resources boldface $\mathbf{m}_{t}$ (=net worth plus current income), the amount that remains after __**c**__onsumption of $\mathbf{c}_{t}$ will be end-of-period __**a**__ssets $\mathbf{a}_{t}$, 
 #
 # <!-- Next period's 'Balances' $B_{t+1}$ reflect this period's $\mathbf{a}_{t}$ augmented by return factor $R$:-->
 
 # %% [markdown]
 # \begin{eqnarray}
-# \mathbf{a}_{t}   &=&\mathbf{m}_{t}-\mathbf{c}_{t} \notag 
+# \mathbf{a}_{t}   &=&\mathbf{m}_{t}-\mathbf{c}_{t}. \notag 
 # \end{eqnarray}
 #
 # The consumer's __**p**__ermanent noncapital income $\mathbf{p}$ grows by a predictable factor $\Gamma$ and is subject to an unpredictable multiplicative shock $\mathbb{E}_{t}[\psi_{t+1}]=1$,
@@ -157,7 +168,8 @@ from HARK.utilities import plotFuncsDer, plotFuncs
 # \begin{eqnarray}
 #     \mathbf{m}_{t+1} &=& \mathbf{a}_{t}\mathsf{R} +\mathbf{p}_{t+1}\theta_{t+1}.  \notag
 # \end{eqnarray}
-#
+
+# %% [markdown]
 # When the consumer has a CRRA utility function $u(\mathbf{c})=\frac{\mathbf{c}^{1-\rho}}{1-\rho}$, the paper shows that the problem can be written in terms of ratios (nonbold font) of level (bold font) variables to permanent income, e.g. $m_{t} \equiv \mathbf{m}_{t}/\mathbf{p}_{t}$, and the Bellman form of [the problem reduces to](https://llorracc.github.io/BufferStockTheory/#The-Related-Problem):
 #
 # \begin{eqnarray*}
