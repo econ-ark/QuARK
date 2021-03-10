@@ -9,8 +9,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 1.2.1
+#       format_version: '1.3'
+#       jupytext_version: 1.10.2
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
@@ -24,7 +24,7 @@
 #     name: python
 #     nbconvert_exporter: python
 #     pygments_lexer: ipython3
-#     version: 3.6.9
+#     version: 3.8.5
 #   latex_envs:
 #     LaTeX_envs_menu_present: true
 #     autoclose: false
@@ -84,12 +84,14 @@ saveFigs=True
 
 # Whether to draw the figures
 drawFigs=True
+required_hark_version = '0.10.8'
 
 import HARK
-if HARK.__version__ < '0.10.6':
-    raise ImportError('This notebook requires at least econ-ark v0.10.6,  please update your installation pip install -U econ-ark or conda install -c conda-forge econ-ark')
+if HARK.__version__ < required_hark_version:
+    raise ImportError('This notebook requires at least econ-ark v',required_hark_version,' please update your installation pip install -U econ-ark or conda install -c conda-forge econ-ark')
 
 from HARK.utilities import find_gui, make_figs, determine_platform, test_latex_installation, setup_latex_env_notebook
+
 pf = determine_platform()
 try:
     latexExists = test_latex_installation(pf)
@@ -386,15 +388,77 @@ make('cFuncsConverge') # Comment out if you want to run uninterrupted
 #
 
 # %% [markdown]
-# ## [If the GIC Holds, $\exists$ a finite 'target' $m$](https://llorracc.github.io/BufferStockTheory/#onetarget)
+# ## [If the GIC-Nrm Holds, $\exists$ a finite 'target' $m$](https://llorracc.github.io/BufferStockTheory/#onetarget)
 #
-# Section [There Is Exactly One Target $m$ Ratio, Which Is Stable](https://llorracc.github.io/BufferStockTheory/#onetarget) shows that, under parameter values for which the limiting consumption function exists, if the GIC holds then there will be a value $\check{m}$ such that:
+# Section [There Is Exactly One Target $m$ Ratio, Which Is Stable](https://llorracc.github.io/BufferStockTheory/#onetarget) shows that, under parameter values for which the limiting consumption function exists, if the GIC-Nrm holds then there will be a value $\check{m}$ such that:
 #
 # \begin{eqnarray*}
 # \mathbb{E}[m_{t+1}] & > & m_{t}~\text{if $m_{t} < \check{m}$} \\
 # \mathbb{E}[m_{t+1}] & < & m_{t}~\text{if $m_{t} > \check{m}$} \\
 # \mathbb{E}[m_{t+1}] & = & m_{t}~\text{if $m_{t} = \check{m}$}
 # \end{eqnarray*}
+#
+# Define 
+#
+# \begin{align*}
+# \tilde{\psi} & = (\mathbb{E}_{t}[\psi_{t+1}^{-1}])^{-1}
+# \\ \tilde{\Gamma} & = \Gamma \tilde{\psi}
+# \end{align*}
+#
+# and note that $\tilde{\psi} < 1$
+#
+# We can solve for this value implicitly:
+# \begin{align*}
+# \mathbb{E}[m_{t+1}] & = (\mathsf{R}/\tilde{\Gamma}) (m_{t}-c(m_{t}))+1
+# \\ \check{m} & = (\mathsf{R}/\tilde{\Gamma}) (\check{m}-c(\check{m}))+1
+# \\ \check{m} - 1 & = (\mathsf{R}/\tilde{\Gamma}) (\check{m}-c(\check{m}))
+# \\ (\check{m} - 1)(\tilde{\Gamma}/\mathsf{R})  & = \check{m}-c(\check{m})
+# \\  c(\check{m}) & = \check{m}-(\check{m} - 1)(\tilde{\Gamma}/\mathsf{R})
+# \\  c(\check{m}) & = \check{m}(1-(\tilde{\Gamma}/\mathsf{R})) +(\tilde{\Gamma}/\mathsf{R})
+# \end{align*}
+# or find it more simply using the fact that the slope is monotonic and continuous so we can differentiate:
+# \begin{align*}
+# \\  c^{\prime}(\check{m}) & = (1-(\tilde{\Gamma}/\mathsf{R}))
+# \end{align*}
+#
+#
+# Expression in `addSSmNrm` code:
+# \begin{align*}
+#   = (1 - \Gamma/\mathsf{R}) m + (\Gamma/R)
+# \end{align*}
+#
+
+# %% [markdown]
+# ## Unique and Stable `Target` Ratios
+#
+# (first part is same as before)
+#
+# The paper examines a second special value of $m$ that defines a somewhat different kind of target.
+#
+# $\hat{m}$ is defined as a value of $m$ at which the consumer expects `balanced growth` in their market resources and their permanent income:
+#
+# \begin{align}
+# \mathbb{E}_{t}[\mathbf{m}_{t+1}]/\mathbf{m}_{t} & = \mathbb{E}_{t}[\mathbf{p}_{t+1}/\mathbf{p}_{t}]
+# \\ \mathbb{E}_{t}[{m}_{t+1}\mathbf{p}_{t+1}]/m_{t}\mathbf{p}_{t} & = \mathbb{E}_{t}[\Gamma\mathbf{p}_{t}\psi_{t+1}/\mathbf{p}_{t}]
+# \\ \mathbb{E}_{t}[{m}_{t+1}\Gamma \psi_{t+1}]/m_{t} & = \Gamma
+# \\ \mathbb{E}_{t}[{m}_{t+1} \psi_{t+1}] & = m_{t}
+# \end{align}
+#
+# But
+# \begin{align}
+# \mathbb{E}[m_{t+1}] & =\mathbb{E}\left[\psi_{t+1}\left((\mathsf{R}/\Gamma \psi_{t+1}) (m_{t}-c(m_{t}))+\theta_{t+1}\right)\right]
+# \\ & =\mathbb{E}\left[\left((\mathsf{R}/\Gamma) (m_{t}-c(m_{t}))+\psi_{t+1}\theta_{t+1}\right)\right]
+# \\ & =(\mathsf{R}/\Gamma) (m_{t}-c(m_{t}))+1
+# \end{align}
+#
+# And the target will be
+# \begin{align}
+# \hat{m} & =(\mathsf{R}/\Gamma) (\hat{m}-c(\hat{m}))+1
+# \\ \hat{m}-1 & =(\mathsf{R}/\Gamma) (\hat{m}-c(\hat{m}))
+# \\ (\Gamma/\mathsf{R})(\hat{m}-1) & =\hat{m}-c(\hat{m})
+# \\ c(\hat{m}) & = \hat{m}(1-(\Gamma/\mathsf{R})) +(\Gamma/\mathsf{R})
+# \end{align}
+#
 
 # %% [markdown]
 # ## [If the GIC Fails, Target Wealth is Infinite ](https://llorracc.github.io/BufferStockTheory/#The-GIC)
@@ -418,7 +482,7 @@ GIC_fails_dictionary['PermGroFac'] = [1.00]
 
 GICFailsExample = IndShockConsumerType(
     cycles=0, # cycles=0 makes this an infinite horizon consumer
-    verbose=0, # by deafult, check conditions shouldn't print out any information
+    verbose=0, # by default, check conditions shouldn't print out any information
     **GIC_fails_dictionary)
 
 
@@ -431,7 +495,7 @@ GICFailsExample = IndShockConsumerType(
 # The checkConditions method does what it sounds like it would
 # verbose=0: Print nothing;
 # verbose=3: Print all available info
-GICFailsExample.checkConditions(verbose=0)
+GICFailsExample.checkConditions(verbose=3)
 
 # %% [markdown]
 # ### The Sustainable Level of Consumption
@@ -495,10 +559,13 @@ make('FVACnotGIC') # Save figures (if appropriate/possible)
 # In the [interactive dashboard](#interactive-dashboard), see what happens as changes in the time preference rate (or changes in risk $\sigma_\Psi$) change the consumer from _growth-patient_ $(\Phi > \tilde{\Gamma})$ to _growth-impatient_ ($\Phi < \tilde{\Gamma}$)
 
 # %%
+GICFailsExample.PermGroFac
+
+# %%
 # Conditions can also be checked without solving the model
 # verbose=0: Print nothing
 # verbose=3: Print all available results
-GICFailsExample.checkConditions(verbose=0)  
+GICFailsExample.checkConditions(verbose=3)  
 
 
 # %% [markdown]
@@ -948,5 +1015,3 @@ plt.xlim(mPlotMin-1,mPlotMax-1)
 plt.ylim(mPlotMin,1.016)
 
 make('PFGICHoldsFHWCFailsRICFails')
-
-# %%
