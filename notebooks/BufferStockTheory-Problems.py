@@ -2,7 +2,7 @@
 # ---
 # jupyter:
 #   jupytext:
-#     cell_metadata_filter: ExecuteTime,autoscroll,heading_collapsed,hidden,slideshow,-hide_ouput,-code_folding
+#     cell_metadata_filter: ExecuteTime,autoscroll,heading_collapsed,hidden,slideshow,title,tags,jupyter,pycharm,-hide_ouput,-code_folding
 #     cell_metadata_json: true
 #     formats: ipynb,py:percent
 #     notebook_metadata_filter: all
@@ -10,9 +10,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.10.2
+#       jupytext_version: 1.11.2
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 #   language_info:
@@ -24,7 +24,7 @@
 #     name: python
 #     nbconvert_exporter: python
 #     pygments_lexer: ipython3
-#     version: 3.8.5
+#     version: 3.9.6
 #   latex_envs:
 #     LaTeX_envs_menu_present: true
 #     autoclose: false
@@ -56,917 +56,945 @@
 # %% [markdown]
 # <a id='interactive-dashboard'></a>
 #
-# [This notebook](https://econ-ark.org/BufferStockTheory/#launch) uses the [Econ-ARK/HARK](https://github.com/econ-ark/HARK) toolkit to reproduce and illustrate key results of the paper [Theoretical Foundations of Buffer Stock Saving](http://llorracc.github.io/BufferStockTheory/BufferStockTheory).
+# [This notebook](https://econ-ark.org/BufferStockTheory/#launch) uses the [Econ-ARK/HARK](https://github.com/econ-ark/HARK) toolkit to reproduce and illustrate key results of the paper [Theoretical Foundations of Buffer Stock Saving](http://econ-ark.github.io/BufferStockTheory/BufferStockTheory).
 #
-# #### An [interactive dashboard](https://econ-ark.org/BufferStockStockTheory/#Dashboard) allows you to modify parameters to see how the figures change. 
+# An [interactive dashboard](https://econ-ark.org/BufferStockStockTheory/#Dashboard) allows you to modify parameters to see how the figures change.
 #
+# - JupyterLab, click on the $\bullet$$\bullet$$\bullet$ patterns to expose the runnable code
+# - in either a Jupyter notebook or JupyterLab, click a double triangle to execute the code and generate the figures
 
-# %%
-# This cell does some standard python setup
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# This cell does some setup
 
-# Import related generic python packages
+# Import required python packages
+from HARK.utilities import plot_funcs
+from builtins import breakpoint
+import logging
+from HARK.utilities import (find_gui, make_figs, determine_platform,
+                            test_latex_installation, setup_latex_env_notebook)
+from HARK.ConsumptionSaving.ConsIndShockModel import init_perfect_foresight
+from HARK import __version__ as HARKversion
+from HARK.ConsumptionSaving.ConsIndShockModel \
+    import (PerfForesightConsumerType, IndShockConsumerType)
+from scipy.optimize import newton as zero_point_of
 import numpy as np
 from copy import deepcopy
+
+from HARK.ConsumptionSaving.ConsIndShockModel \
+    import init_idiosyncratic_shocks as base_params
 
 # Plotting tools
 import matplotlib.pyplot as plt
 
-# The warnings package allows us to ignore some harmless but alarming warning messages
+# Ignore some harmless but alarming warning messages
 import warnings
 warnings.filterwarnings("ignore")
 
+# breakpoint()
 # Code to allow a master "Generator" and derived "Generated" versions
 #   - allows "$nb-Problems-And-Solutions → $nb-Problems → $nb"
-Generator=False # Is this notebook the master or is it generated?
+Generator = True  # Is this notebook the master or is it generated?
 
 # Whether to save the figures to Figures_dir
-saveFigs=True
+saveFigs = True
 
 # Whether to draw the figures
-drawFigs=True
-required_hark_version = '0.10.8'
+drawFigs = True
 
-import HARK
-if HARK.__version__ < required_hark_version:
-    raise ImportError('This notebook requires at least econ-ark v',required_hark_version,' please update your installation pip install -U econ-ark or conda install -c conda-forge econ-ark')
-
-from HARK.utilities import find_gui, make_figs, determine_platform, test_latex_installation, setup_latex_env_notebook
+if HARKversion < '0.11.0':
+    raise ImportError(
+        'This notebook requires at least econ-ark v0.11.0.\n' +
+        'Please update your installation:\n' +
+        'pip install -U econ-ark or conda install -c conda-forge econ-ark')
 
 pf = determine_platform()
 try:
     latexExists = test_latex_installation(pf)
-except ImportError: # windows and MacOS requires manual install
+except ImportError:  # windows and MacOS requires manual install
     latexExists = False
 
 setup_latex_env_notebook(pf, latexExists)
 
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
 # check if GUI is present if not then switch drawFigs to False and force saveFigs to be True
 if not find_gui():
     drawFigs = False
     saveFigs = True
 
-# this can be removed if we pass in saveFigs and drawFigs in every call to make('figure')
-def make(figure_name, target_dir="../../Figures"):
+# Font sizes for figures
+fssml, fsmid, fsbig = 18, 22, 26
+
+# this can be removed if we pass in saveFigs and drawFigs in
+# every call to makeFig('figure')
+
+
+def makeFig(figure_name, target_dir="../../Figures"):
+    print('')
     make_figs(figure_name, saveFigs, drawFigs, target_dir)
-
-# %%
-# Import HARK tools
-from HARK.ConsumptionSaving.ConsIndShockModel import IndShockConsumerType
-from HARK.utilities import plotFuncsDer, plotFuncs
+    print('')
 
 
-# %% [markdown]
-# ## [The Problem](http://llorracc.github.io/BufferStockTheory/BufferStockTheory/#The-Problem)
+# %% [markdown] {"tags": []}
+# ## [The Problem](http://econ-ark.github.io/BufferStockTheory/BufferStockTheory/#The-Problem)
 #
 # The paper defines and calibrates a small set of parameters:
 #
-# | Parameter | Description | Code | Value |
-# |:---:| ---         | ---  | :---: |
-# | $\Gamma$ | Permanent Income Growth Factor | $\texttt{PermGroFac}$ | 1.03 |
-# | $\mathsf{R}$ | Interest Factor | $\texttt{Rfree}$ | 1.04 |
-# | $\beta$ | Time Preference Factor | $\texttt{DiscFac}$ | 0.96 |
-# | $\rho$ | Coeﬃcient of Relative Risk Aversion| $\texttt{CRRA}$ | 2 |
-# | $\wp$ | Probability of Unemployment | $\texttt{UnempPrb}$ | 0.005 |
-# | $\theta^{\large u}$ | Income when Unemployed | $\texttt{IncUnemp}$ | 0. |
-# | $\sigma_\psi$ | Std Dev of Log Permanent Shock| $\texttt{PermShkStd}$ | 0.1 |
-# | $\sigma_\theta$ | Std Dev of Log Transitory Shock| $\texttt{TranShkStd}$ | 0.1 |
+# \begin{align}
+#  &
+# \renewcommand{\APF}{\pmb{\unicode[0.55,0.05]{0x00DE}}}
+# \newcommand{\PatFac}{\pmb{\unicode[0.55,0.05]{0x00DE}}}
+# \newcommand{\PatRte}{\pmb{\unicode[0.55,0.05]{0x00FE}}}
+# \newcommand{\aLev}{\mathbf{a}}
+# \newcommand{\CRRA}{\rho}
+# \newcommand{\cLev}{\pmb{\mathrm{c}}}
+# \newcommand{\aNrm}{{a}}
+# \newcommand{\bNrm}{{b}}
+# \newcommand{\cNrm}{{c}}
+# \newcommand{\dNrm}{{d}}
+# \newcommand{\hNrm}{{h}}
+# \newcommand{\mNrm}{{m}}
+# \newcommand{\vNrm}{{v}}
+# \newcommand{\aLev}{\pmb{\mathrm{a}}}
+# \newcommand{\bLev}{\pmb{\mathrm{b}}}
+# \newcommand{\cLev}{\pmb{\mathrm{c}}}
+# \newcommand{\dLev}{\pmb{\mathrm{d}}}
+# \newcommand{\hLev}{\pmb{\mathrm{h}}}
+# \newcommand{\mLev}{\pmb{\mathrm{m}}}
+# \newcommand{\pLev}{\pmb{\mathrm{p}}}
+# \newcommand{\vLev}{\pmb{\mathrm{v}}}
+# \newcommand{\cFunc}{\mathrm{c}}
+# \newcommand{\uFunc}{\mathrm{u}}
+# \newcommand{\RNrm}{\mathcal{R}}
+# \newcommand{\DiscFac}{\beta}
+# \newcommand{\Ex}{\mathbb{E}}
+# \newcommand{\IncUnemp}{\mu}
+# \newcommand{\MPC}{\kappa}
+# \newcommand{\PermGroFac}{\Gamma}
+# \newcommand{\PermGroFacAdj}{\tilde{\Gamma}}
+# \newcommand{\PermShkStd}{\sigma_\Psi}
+# \newcommand{\permShkStd}{\sigma_\psi}
+# \newcommand{\PermShk}{\Psi} % New
+# \newcommand{\permShk}{\psi} % New
+# \newcommand{\Rfree}{\mathsf{R}}
+# \newcommand{\Trg}{\hat}
+# \newcommand{\StE}{\check}
+# \newcommand{\Thorn}{\pmb{\TH}}
+# \newcommand{\TranShkStd}{\sigma_\Theta}
+# \newcommand{\TranShk}{\Theta}
+# \newcommand{\tranShk}{\theta}
+# \newcommand{\tranShkStd}{\sigma_{\theta}}
+# \newcommand{\UnempPrb}{\wp}
+# \newcommand\maththorn{\mathord{\pmb{\text{\TH}}}}
+# \end{align}
 #
-# that define the preferences and environment of microeconomic consumers as detailed below. 
+# | Parameter | Description | Python Variable | Value |
+# |:---:      | :---:       | :---:  | :---: |
+# | $\PermGroFac$ | Permanent Income Growth Factor | $\texttt{PermGroFac}$ | 1.03 |
+# | $\Rfree$ | Interest Factor | $\texttt{Rfree}$ | 1.04 |
+# | $\DiscFac$ | Time Preference Factor | $\texttt{DiscFac}$ | 0.96 |
+# | $\CRRA$ | Coeﬃcient of Relative Risk Aversion| $\texttt{CRRA}$ | 2 |
+# | $\UnempPrb$ | Probability of Unemployment | $\texttt{UnempPrb}$ | 0.005 |
+# | $\tranShk^{\large u}$ | Income when Unemployed | $\texttt{IncUnemp}$ | 0. |
+# | $\permShkStd$ | Std Dev of Log Permanent Shock| $\texttt{PermShkStd}$ | 0.1 |
+# | $\TranShkStd$ | Std Dev of Log Transitory Shock| $\texttt{TranShkStd}$ | 0.1 |
+#
+# that define the preferences and environment of microeconomic consumers as detailed below.
 #
 # The objective of such a consumer with a horizon of $n$ periods is to maximize the value obtained from the stream of consumption __**c**__ from period $t=T-n$ to a terminal period $T$:
 #
 # \begin{equation}
-# \mathbf{v}_{t} = \sum_{i=0}^{n} \beta^{n}\mathrm{u}(\mathbf{c}_{t+n}) 
+# \mathbf{v}_{t} = \sum_{i=0}^{n} \DiscFac^{n}\mathrm{u}(\mathbf{c}_{t+n})
 # \end{equation}
 #
-# The infinite-horizon solution to the model is defined as the limit of the solution in the first period of life $\mathrm{c}_{T-n}$ as the horizon $n$ goes to infinity.
+# The infinite-horizon solution is the limit of the first period solution $\mathrm{c}_{T-n}$ as the horizon $n$ goes to infinity.
 
 # %% [markdown]
 # ### Details
-# For a microeconomic consumer who begins period $t$ with __**m**__arket resources boldface $\mathbf{m}_{t}$ (=net worth plus current income), the amount that remains after __**c**__onsumption of $\mathbf{c}_{t}$ will be end-of-period __**a**__ssets $\mathbf{a}_{t}$, 
+# For a microeconomic consumer who begins period $t$ with __**m**__arket resources boldface $\mLev_{t}$ (=net worth plus current income), the amount that remains after __**c**__onsumption of $\cLev_{t}$ will be end-of-period __**a**__ssets $\aLev_{t}$,
 #
-# <!-- Next period's 'Balances' $B_{t+1}$ reflect this period's $\mathbf{a}_{t}$ augmented by return factor $R$:-->
+# <!-- Next period's 'Balances' $B_{t+1}$ reflect this period's $\aLev_{t}$ augmented by return factor $R$:-->
 
 # %% [markdown]
 # \begin{eqnarray}
-# \mathbf{a}_{t}   &=&\mathbf{m}_{t}-\mathbf{c}_{t}. \notag 
+# \aLev_{t}   &=&\mLev_{t}-\cLev_{t}. \notag
 # \end{eqnarray}
 #
-# The consumer's __**p**__ermanent noncapital income $\mathbf{p}$ grows by a predictable factor $\Gamma$ and is subject to an unpredictable multiplicative shock $\mathbb{E}_{t}[\psi_{t+1}]=1$,
+# The consumer's __**p**__ermanent noncapital income $\pLev$ grows by a predictable factor $\PermGroFac$ and is subject to an unpredictable multiplicative shock $\Ex_{t}[\permShk_{t+1}]=1$,
 #
 # \begin{eqnarray}
-# \mathbf{p}_{t+1} & = & \mathbf{p}_{t} \Gamma \psi_{t+1}, \notag 
+# \pLev_{t+1} & = & \pLev_{t} \PermGroFac \permShk_{t+1}, \notag
 # \end{eqnarray}
 #
-# and, if the consumer is employed, actual income is permanent income multiplied by a transitory shock $\theta^{\large e}$.  There is also a probability $\wp$ that the consumer will be temporarily unemployed and experience income of $\theta^{\large u}  = 0$.  We construct $\theta^{\large e}$ so that its mean value is $1/(1-\wp)$ because in that case the mean level of the transitory shock (accounting for both unemployed and employed states) is exactly 
+# and, if the consumer is employed, actual income is permanent income multiplied by a transitory shock $\tranShk^{\large e}$.  There is also a probability $\UnempPrb$ that the consumer will be temporarily unemployed and experience income of $\tranShk^{\large u}  = 0$.  We construct $\tranShk^{\large e}$ so that its mean value is $1/(1-\UnempPrb)$ because in that case the mean level of the transitory shock (accounting for both unemployed and employed states) is exactly
 #
 # \begin{eqnarray}
-# \mathbb{E}_{t}[\theta_{t+1}] & = & \theta^{\large{u}}  \times \wp + (1-\wp) \times \mathbb{E}_{t}[\theta^{\large{e}}_{t+1}] \notag
-# \\ & = & 0 \times \wp + (1-\wp) \times 1/(1-\wp)  \notag
+# \Ex_{t}[\tranShk_{t+1}] & = & \tranShk^{\large{u}}  \times \UnempPrb + (1-\UnempPrb) \times \Ex_{t}[\tranShk^{\large{e}}_{t+1}] \notag
+# \\ & = & 0 \times \UnempPrb + (1-\UnempPrb) \times 1/(1-\UnempPrb)  \notag
 # \\ & = & 1. \notag
 # \end{eqnarray}
 #
-#   We can combine the unemployment shock $\theta^{\large u}$ and the transitory shock to employment income $\theta^{\large e}$ into $\theta _{t+1}$, so that next period's market resources are
+#   We can combine the unemployment shock $\tranShk^{\large u}$ and the transitory shock to employment income $\tranShk^{\large e}$ into $\tranShk _{t+1}$, so that next period's market resources are
 # \begin{eqnarray}
-#     \mathbf{m}_{t+1} &=& \mathbf{a}_{t}\mathsf{R} +\mathbf{p}_{t+1}\theta_{t+1}.  \notag
+#     \mLev_{t+1} &=& \aLev_{t}\Rfree +\pLev_{t+1}\tranShk_{t+1}.  \notag
 # \end{eqnarray}
 
 # %% [markdown]
-# When the consumer has a CRRA utility function $u(\mathbf{c})=\frac{\mathbf{c}^{1-\rho}}{1-\rho}$, the paper shows that the problem can be written in terms of ratios (nonbold font) of level (bold font) variables to permanent income, e.g. $m_{t} \equiv \mathbf{m}_{t}/\mathbf{p}_{t}$, and the Bellman form of [the problem reduces to](https://llorracc.github.io/BufferStockTheory/#The-Related-Problem):
+# When the consumer has a CRRA utility function $u(\cLev)=\frac{\cLev^{1-\CRRA}}{1-\CRRA}$, the paper shows that the problem can be written in terms of ratios (nonbold font) of level (bold font) variables to permanent income, e.g. $m_{t} \equiv \mLev_{t}/\pLev_{t}$, and the Bellman form of [the problem reduces to](https://econ-ark.github.io/BufferStockTheory/#The-Related-Problem):
 #
 # \begin{eqnarray*}
-# v_t(m_t) &=& \max_{c_t}~~ u(c_t) + \beta~\mathbb{E}_{t} [(\Gamma\psi_{t+1})^{1-\rho} v_{t+1}(m_{t+1}) ] \\
+# v_t(m_t) &=& \max_{c_t}~~ u(c_t) + \DiscFac~\Ex_{t} [(\PermGroFac\permShk_{t+1})^{1-\CRRA} v_{t+1}(m_{t+1}) ] \\
 # & s.t. & \\
 # a_t &=& m_t - c_t \\
-# m_{t+1} &=& a_t \mathsf{R}/(\Gamma \psi_{t+1}) + \theta_{t+1} \\
+# m_{t+1} &=& a_t \Rfree/(\PermGroFac \permShk_{t+1}) + \tranShk_{t+1} \\
 # \end{eqnarray*}
 
-# %%
-# Define a dictionary with baseline parameter values
-
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
 # Import default parameter values (init_idiosyncratic_shock)
-from HARK.ConsumptionSaving.ConsIndShockModel import init_idiosyncratic_shocks as base_params
 
 # Set the parameters for the baseline results in the paper
 # using the variable names defined in the cell above
-base_params['PermGroFac'] =                [1.03] # Permanent income growth factor
-base_params['Rfree']      = Rfree        =  1.04  # Interest factor on assets
-base_params['DiscFac']    = DiscFac      =  0.96  # Time Preference Factor
-base_params['CRRA']       = CRRA         =  2.00  # Coefficient of relative risk aversion
-base_params['UnempPrb']   = UnempPrb     =  0.005 # Probability of unemployment (e.g. Probability of Zero Income in the paper)
-base_params['IncUnemp']   = IncUnemp     =  0.0   # Induces natural borrowing constraint
-base_params['PermShkStd'] =                 [0.1]   # Standard deviation of log permanent income shocks
-base_params['TranShkStd'] =                 [0.1]   # Standard deviation of log transitory income shocks
-# %%
+base_params['PermGroFac'] = [1.03]  # Permanent income growth factor
+base_params['Rfree'] = Rfree = 1.04  # Interest factor on assets
+base_params['DiscFac'] = DiscFac = 0.96  # Time Preference Factor
+base_params['CRRA'] = CRRA = 2.00  # Coefficient of relative risk aversion
+# Probability of unemployment (e.g. Probability of Zero Income in the paper)
+base_params['UnempPrb'] = UnempPrb = 0.005
+base_params['IncUnemp'] = IncUnemp = 0.0   # Induces natural borrowing constraint
+base_params['permShkStd'] = [0.1]   # Standard deviation of log permanent income shocks
+base_params['tranShkStd'] = [0.1]   # Standard deviation of log transitory income shocks
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
 # Uninteresting housekeeping and details
 # Make global variables for the things that were lists above -- uninteresting housekeeping
-PermGroFac, PermShkStd, TranShkStd = base_params['PermGroFac'][0],base_params['PermShkStd'][0],base_params['TranShkStd'][0]
+PermGroFac, permShkStd, tranShkStd = base_params['PermGroFac'][0], base_params['permShkStd'][0], base_params['tranShkStd'][0]
 
 # Some technical settings that are not interesting for our purposes
-base_params['LivPrb']       = [1.0]   # 100 percent probability of living to next period
-base_params['CubicBool']    = True    # Use cubic spline interpolation
-base_params['T_cycle']      = 1       # No 'seasonal' cycles
-base_params['BoroCnstArt']  = None    # No artificial borrowing constraint
+base_params['LivPrb'] = [1.0]   # 100 percent chance of living to next period
+base_params['BoroCnstArt'] = None    # No artificial borrowing constraint
 # %% [markdown]
 # ## Convergence of the Consumption Rules
 #
-# Under the given parameter values, [the paper's first figure](https://llorracc.github.io/BufferStockTheory/#Convergence-of-the-Consumption-Rules) depicts the successive consumption rules that apply in the last period of life $(c_{T}(m))$, the second-to-last period, and earlier periods $(c_{T-n})$.  The consumption function to which these converge is $c(m)$:
+# Under the given parameter values, [the paper's first figure](https://econ-ark.github.io/BufferStockTheory/#Convergence-of-the-Consumption-Rules) depicts the successive consumption rules that apply in the last period of life $(c_{T}(m))$, the second-to-last period, and earlier periods $(c_{T-n})$.  The consumption function to which these converge is $c(m)$:
 #
-# $$
+# $
 # c(m) = \lim_{n \uparrow \infty} c_{T-n}(m) \notag
-# $$
-#
+# $
 
-# %%
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
 # Create a buffer stock consumer instance by invoking the IndShockConsumerType class
 # with the built-in parameter dictionary "base_params"
 
+base_params['cycles'] = 100  # periods to solve from end
 # Construct finite horizon agent with baseline parameters
-baseAgent_Fin = IndShockConsumerType(**base_params)
-baseAgent_Fin.cycles = 100   # Set finite horizon (T = 100)
+baseAgent_Fin = \
+    IndShockConsumerType(**base_params,
+                         quietly=True)  # Don't say anything during setup
 
-baseAgent_Fin.solve()        # Solve the model
-baseAgent_Fin.unpack('cFunc')  # Make the consumption function easily accessible
+baseAgent_Fin.solve(quietly=True)  # Solve the model quietly
+
+baseAgent_Fin.unpack('cFunc')
+cFunc = baseAgent_Fin.cFunc
 
 
-# %%
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
 # Plot the different consumption rules for the different periods
 
-mPlotMin  = 0
-mLocCLabels = 9.6 # Defines horizontal limit of figure
+mPlotMin = 0
+mLocCLabels = 9.6  # Defines horizontal limit of figure
 mPlotTop = 6.5    # Defines maximum m value where functions are plotted
-mPts  = 1000      # Number of points at which functions are evaluated
+mPts = 1000      # Number of points at which functions are evaluated
 
-mBelwLabels    = np.linspace(mPlotMin,mLocCLabels-0.1,mPts) # Range of m below loc of labels
-m_FullRange    = np.linspace(mPlotMin,mPlotTop,mPts)        # Full plot range 
-c_Tm0  = m_FullRange                           # c_Tm0  defines the last period consumption rule (c=m)
-c_Tm1  = baseAgent_Fin.cFunc[ -2](mBelwLabels) # c_Tm1 defines the second-to-last period consumption rule
-c_Tm5  = baseAgent_Fin.cFunc[ -6](mBelwLabels) # c_Tm5 defines the T-5 period consumption rule
-c_Tm10 = baseAgent_Fin.cFunc[-11](mBelwLabels) # c_Tm10 defines the T-10 period consumption rule
-c_Limt = baseAgent_Fin.cFunc[  0](mBelwLabels) # c_Limt defines limiting inﬁnite-horizon consumption rule
-plt.figure(figsize = (12,9))
-plt.plot(mBelwLabels,c_Limt,color="black")
-plt.plot(mBelwLabels,c_Tm1 ,color="black")
-plt.plot(mBelwLabels,c_Tm5 ,color="black")
-plt.plot(mBelwLabels,c_Tm10,color="black")
-plt.plot(m_FullRange,c_Tm0 ,color="black")
-plt.xlim(0,11)
-plt.ylim(0,7)
-plt.text(7.0,6.0,r'$c_{T   }(m) = 45$ degree line',fontsize = 22,fontweight='bold')
-plt.text(mLocCLabels,5.3,r'$c_{T-1 }(m)$',fontsize = 22,fontweight='bold')
-plt.text(mLocCLabels,2.6,r'$c_{T-5 }(m)$',fontsize = 22,fontweight='bold')
-plt.text(mLocCLabels,2.1,r'$c_{T-10}(m)$',fontsize = 22,fontweight='bold')
-plt.text(mLocCLabels,1.7,r'$c(m)       $',fontsize = 22,fontweight='bold')
-plt.arrow(6.9,6.05,-0.6,0,head_width= 0.1,width=0.001,facecolor='black',length_includes_head='True')
-plt.tick_params(labelbottom=False, labelleft=False,left='off',right='off',bottom='off',top='off')
-plt.text(0,7.05,"$c$",fontsize = 26)
-plt.text(11.1,0,"$m$",fontsize = 26)
+mBelwLabels = np.linspace(mPlotMin, mLocCLabels-0.1, mPts)  # Range of m below loc of labels
+m_FullRange = np.linspace(mPlotMin, mPlotTop, mPts)        # Full plot range
+# c_Tm0  defines the last period consumption rule (c=m)
+c_Tm0 = m_FullRange
+# c_Tm1 defines the second-to-last period consumption rule
+c_Tm1 = cFunc[-2](mBelwLabels)
+c_Tm5 = cFunc[-6](mBelwLabels)  # c_Tm5 defines the T-5 period consumption rule
+c_Tm10 = cFunc[-11](mBelwLabels)  # c_Tm10 defines the T-10 period consumption rule
+# c_Limt defines limiting inﬁnite-horizon consumption rule
+c_Limt = baseAgent_Fin.cFunc[0](mBelwLabels)
+plt.figure(figsize=(12, 9))
+plt.plot(mBelwLabels, c_Limt, color="black")
+plt.plot(mBelwLabels, c_Tm1, color="black")
+plt.plot(mBelwLabels, c_Tm5, color="black")
+plt.plot(mBelwLabels, c_Tm10, color="black")
+plt.plot(m_FullRange, c_Tm0, color="black")
+plt.xlim(0, 11)
+plt.ylim(0, 7)
+plt.text(7.0, 6.0, r'$c_{T   }(m) = 45$ degree line', fontsize=22, fontweight='bold')
+plt.text(mLocCLabels, 5.3, r'$c_{T-1 }(m)$', fontsize=22, fontweight='bold')
+plt.text(mLocCLabels, 2.6, r'$c_{T-5 }(m)$', fontsize=22, fontweight='bold')
+plt.text(mLocCLabels, 2.1, r'$c_{T-10}(m)$', fontsize=22, fontweight='bold')
+plt.text(mLocCLabels, 1.7, r'$c(m)       $', fontsize=22, fontweight='bold')
+plt.arrow(6.9, 6.05, -0.6, 0, head_width=0.1, width=0.001,
+          facecolor='black', length_includes_head='True')
+plt.tick_params(labelbottom=False, labelleft=False, left='off',
+                right='off', bottom='off', top='off')
+plt.text(0, 7.05, "$c$", fontsize=26)
+plt.text(11.1, 0, "$m$", fontsize=26)
 # Save the figures in several formats
 
-make('cFuncsConverge') # Comment out if you want to run uninterrupted
+makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 
 # %% [markdown] {"slideshow": {"slide_type": "slide"}}
 # Use the [interactive dashboard](#interactive-dashboard) to explore the effects of changes in patience, risk aversion, or risk
 
-# %% [markdown] {"heading_collapsed": true}
+# %% [markdown] {"jupyter": {"source_hidden": true}, "tags": []}
 # ### PROBLEM: Natural Borrowing Constraint Approaches Artificial Constraint
 #
-# Show numerically the result that is proven analytically in [The-Liquidity-Constrained-Solution-as-a-Limit](https://llorracc.github.io/BufferStockTheory/#The-Liquidity-Constrained-Solution-as-a-Limit), by solving the model for successively smaller values of $\wp$.
+# Show numerically the result that is proven analytically in [The-Liquidity-Constrained-Solution-as-a-Limit](https://econ-ark.github.io/BufferStockTheory/#The-Liquidity-Constrained-Solution-as-a-Limit), by solving the model for successively smaller values of $\UnempPrb$.
 #    * You need only to solve for the second-to-last period of life to do this
 #       * `TwoPeriodModel = IndShockConsumerType(**base_params)`
 #       * `TwoPeriodModel.cycles = 2   # Make this type have a two period horizon (Set T = 2)`
 #
-#    * You should show the consumption rules for different values of $\wp$ on the same graph
-#       * To make this easier, you will want to use the plotFuncs command:
-#          * `from HARK.utilities import plotFuncsDer, plotFuncs`
+#    * You should show the consumption rules for different values of $\UnempPrb$ on the same graph
+#       * To make this easier, you will want to use the plot_funcs command:
+#          * `from HARK.utilities import plot_funcs_der, plot_funcs`
 #
-# Create a cell or cells in the notebook below this cell and put your solution there; comment on the size of $\wp$ needed to make the two models visually indistinguishable
+# Create a cell or cells in the notebook below this cell and put your solution there; comment on the size of $\UnempPrb$ needed to make the two models visually indistinguishable
 
-# %% [markdown]
+# %% [markdown] {"tags": []}
 # ## Factors and Conditions
 #
-# ### [The Finite Human Wealth Condition](http://llorracc.github.io/BufferStockTheory/#Human-Wealth)
+# ### [The Finite Human Wealth Condition](http://econ-ark.github.io/BufferStockTheory/#Human-Wealth)
 #
 # Human wealth for a perfect foresight consumer is the present discounted value of future income:
 #
 # \begin{eqnarray}\notag
-# \mathbf{h}_{t} & = & \mathbb{E}_{t}[\mathbf{p}_{t} + \mathsf{R}^{-1} \mathbf{p}_{t+1} + \mathsf{R}^{2} \mathbf{p}_{t+2} ... ] \\ \notag 
-#       & = & \mathbf{p}_{t} \left(1 + (\Gamma/\mathsf{R}) + (\Gamma/\mathsf{R})^{2} ... \right) 
+# \hLev_{t} & = & \Ex_{t}[\pLev_{t} + \Rfree^{-1} \pLev_{t+1} + \Rfree^{2} \pLev_{t+2} ... ] \\ \notag
+#       & = & \pLev_{t} \left(1 + (\PermGroFac/\Rfree) + (\PermGroFac/\Rfree)^{2} ... \right)
 # \end{eqnarray}
-# which approaches infinity as the horizon extends if $\Gamma/\mathsf{R} \geq 1$.  We say that the 'Finite Human Wealth Condition' [(FHWC)](https://llorracc.github.io/BufferStockTheory/#FHWC) holds if
-# $0 \leq (\Gamma/\mathsf{R}) < 1$.
-
-# %% [markdown]
-# ### [Absolute Patience and the AIC](https://llorracc.github.io/BufferStockTheory/#AIC)
 #
-# The paper defines the Absolute Patience Factor [(APF)](https://llorracc.github.io/BufferStockTheory/#APF) as being equal to the ratio $\mathbf{c}_{t+1}/\mathbf{c}_{t}$ for a perfect foresight consumer.  The Old English character <span style="font-size:larger;">"&#222;"</span> used for this object in the paper cannot currently be rendered conveniently in Jupyter notebooks, so we will substitute $\Phi$ here:
+# which approaches infinity as the horizon extends if $\PermGroFac/\Rfree \geq 1$.  We say that the 'Finite Human Wealth Condition' [(FHWC)](https://econ-ark.github.io/BufferStockTheory/#FHWC) holds if
+# $0 \leq (\PermGroFac/\Rfree) < 1$.
+
+# %% [markdown] {"tags": []}
+# ### [Absolute Patience and the AIC](https://econ-ark.github.io/BufferStockTheory/#AIC)
+#
+# The paper defines the Absolute Patience Factor [(APF)](https://econ-ark.github.io/BufferStockTheory/#APF) as being equal to the ratio $\cLev_{t+1}/\cLev_{t}$ for a perfect foresight consumer.  (The Old English character Thorn used for this object in the paper cannot reliably be rendered in Jupyter notebooks; it may appear as capital Phi):
 #
 # \begin{equation}
-# \Phi = (\mathsf{R} \beta)^{1/\rho}
+# \PatFac = (\Rfree \DiscFac)^{1/\CRRA}
 # \end{equation}
 #
-# If $\Phi = 1$, a perfect foresight consumer will spend at exactly the level of $\mathbf{c}$ that can be sustained perpetually (given their current and future resources).  If $\Phi < 1$ (the consumer is 'absolutely impatient'; or, 'the absolute impatience condition holds'), the consumer is consuming more than the sustainable amount, so consumption will fall, and if the consumer is 'absolutely patient' with $\Phi > 1$ consumption will grow over time.
+# If $\APF = 1$, a perfect foresight consumer will spend at exactly the level of $\cLev$ that can be sustained perpetually (given their current and future resources).  If $\APF < 1$ (the consumer is 'absolutely impatient'; or, 'the absolute impatience condition holds'), the consumer is consuming more than the sustainable amount, so consumption will fall, and if the consumer is 'absolutely patient' with $\APF > 1$ consumption will grow over time.
 #
 #
 
 # %% [markdown]
-# ### [Growth Patience and the GIC](https://llorracc.github.io/BufferStockTheory/#GIC)
+# ### [Growth Patience and the GICRaw](https://econ-ark.github.io/BufferStockTheory/#GIC)
 #
-# For a [perfect foresight consumer](http://econ.jhu.edu/people/ccarroll/public/lecturenotes/consumption/PerfForesightCRRA), whether the ratio $c$=__**c**__/__**p**__ is rising, constant, or falling depends on the relative growth rates of consumption and permanent income; that ratio is measured by the [Perfect Foresight Growth Patience Factor](https://llorracc.github.io/BufferStockTheory/#PFGPF):
+# For a [perfect foresight consumer](https://www.econ2.jhu.edu/people/ccarroll/public/lecturenotes/consumption/PerfForesightCRRA), whether the ratio $c$=__**c**__/__**p**__ is rising, constant, or falling depends on the relative growth rates of consumption and permanent income; that ratio is measured by the [Perfect Foresight Growth Patience Factor](https://econ-ark.github.io/BufferStockTheory/#PFGPF):
 #
 # \begin{eqnarray}
-# \Phi_{\Gamma} & = & \Phi/\Gamma
+# \APF_{\PermGroFac} & = & \APF/\PermGroFac
 # \end{eqnarray}
-# and whether the $c$ is falling or rising over time depends on whether $\Phi_{\Gamma}$ is below or above 1.
+# and whether the $c$ is falling or rising over time depends on whether $\APF_{\PermGroFac}$ is below or above 1.
 #
-# An analogous condition can be defined when there is uncertainty about permanent income.  Defining $\tilde{\Gamma} = (\mathbb{E}[\psi^{-1}])^{-1}\Gamma$, the 'Growth Impatience Condition' [(GIC)](https://llorracc.github.io/BufferStockTheory/#GIC) determines whether, \textit{in expectation}, the stochastic value of $c$ is rising, constant, or falling over time:
+# An analogous condition can be defined when there is uncertainty about permanent income.  Defining $\tilde{\PermGroFac} = (\Ex[\permShk^{-1}])^{-1}\PermGroFac$, the
+# ['Growth Impatience Condition'](https://econ-ark.github.io/BufferStockTheory/#GIC) determines whether, _in expectation_, the stochastic value of $c$ is rising, constant, or falling over time:
+#
 # \begin{eqnarray}
-#   \Phi/\tilde{\Gamma} & < & 1
+#   \APF/\tilde{\PermGroFac} & < & 1.
 # \end{eqnarray}
+#
+# ### [The Finite Value of Autarky Condition (FVAC)](https://econ-ark.github.io/BufferStockTheory/#Autarky-Value)
 
 # %% [markdown]
-# ### [The Finite Value of Autarky Condition (FVAC)](https://llorracc.github.io/BufferStockTheory/#Autarky-Value)
-
-
-# %% [markdown]
-# The paper [shows](https://llorracc.github.io/BufferStockTheory/#Autarky-Value) that a consumer who planned to spend his permanent income $\{ \mathbf{p}_{t}, \mathbf{p}_{t+1}, ...\} $ in every period would have value defined by
+# The paper [shows](https://econ-ark.github.io/BufferStockTheory/#Autarky-Value) that a consumer who planned to spend his permanent income $\{ \pLev_{t}, \pLev_{t+1}, ...\} $ in every period would have value defined by
 #
 # \begin{equation*}
-# \mathbf{v}_{t}^{\text{autarky}} = u(\mathbf{p}_{t})\left(\frac{1}{1-\beta \Gamma^{1-\rho} \mathbb{E}[\psi^{1-\rho}]}\right)
+# \vLev_{t}^{\text{autarky}} = \uFunc(\pLev_{t})\left(\frac{1}{1-\DiscFac \PermGroFac^{1-\CRRA} \Ex[\permShk^{1-\CRRA}]}\right)
 # \end{equation*}
 #
-# and defines the 'Finite Value of Autarky Condition' as the requirement that the denominator be a positive finite number:
+# and defines the ['Finite Value of Autarky Condition'](https://econ-ark.github.io/BufferStockTheory/#Autarky-Value) as the requirement that the denominator be a positive finite number:
 #
 # \begin{equation*}
-# \beta \Gamma^{1-\rho} \mathbb{E}[\psi^{1-\rho}] < 1
+# \DiscFac \PermGroFac^{1-\CRRA} \Ex[\permShk^{1-\CRRA}] < 1
 # \end{equation*}
 
 # %% [markdown]
-# ### [The Weak Return Impatience Condition (WRIC)](https://llorracc.github.io/BufferStockTheory/#WRIC)
+# ### [The Weak Return Impatience Condition (WRIC)](https://econ-ark.github.io/BufferStockTheory/#WRIC)
 #
-# The [Return Impatience Condition](https://llorracc.github.io/BufferStockTheory/#RIC) $\Phi/\mathsf{R} < 1$ has long been understood to be required for the perfect foresight model to have a nondegenerate solution (a common special case is when $\rho=1$; in this case $\Phi = \mathsf{R} \beta$ so $\Phi<1$ reduces to $\beta < \mathsf{R}$).  
+# The [Return Impatience Condition](https://econ-ark.github.io/BufferStockTheory/#RIC) $\APF/\Rfree < 1$ has long been understood to be required for the perfect foresight model to have a nondegenerate solution (a common special case is when $\CRRA=1$; in this case $\APF = \Rfree \DiscFac$ so $\APF<1$ reduces to the familiar condition $\DiscFac < \Rfree$).
 #
 # If the RIC does not hold, the consumer is so patient that the optimal consumption function approaches zero as the horizon extends indefinitely.
 #
-# When the probability of unemployment is $\wp$, the paper articulates an analogous (but weaker) condition:
+# When the probability of unemployment is $\UnempPrb$, the paper articulates an analogous (but weaker) condition:
 #
 # \begin{eqnarray}
-#  \wp^{1/\rho} \Phi/\mathsf{R} & < & 1
+#  \UnempPrb^{1/\CRRA} \APF/\Rfree & < & 1
 # \end{eqnarray}
 
 # %% [markdown]
 # # Key Results
 #
-# ## [Nondegenerate Solution Requires FVAC and WRIC](https://llorracc.github.io/BufferStockTheory/#Sufficient-Conditions-For-Nondegenerate-Solution)
+# ## [Nondegenerate Solution Requires FVAC and WRIC](https://econ-ark.github.io/BufferStockTheory/#Sufficient-Conditions-For-Nondegenerate-Solution)
 #
-# A main result of the paper is that the conditions required for the model to have a nondegenerate solution ($0 < c(m) < \infty$ for feasible $m$) are that the Finite Value of Autarky (FVAC) and Weak Return Impatience Condition (WRIC) hold.
+# A main result of the paper is that the conditions required for the model to have a nondegenerate limiting solution ($0 < c(m) < \infty$ for feasible $m$) are that the Finite Value of Autarky (FVAC) and Weak Return Impatience Condition (WRIC) hold.
 
 # %% [markdown]
-# ## [Natural Borrowing Constraint limits to Artificial Borrowing Constraint](https://llorracc.github.io/BufferStockTheory/#The-Liquidity-Constrained-Solution-as-a-Limit)
+# ## [Natural Borrowing Constraint limits to Artificial Borrowing Constraint](https://econ-ark.github.io/BufferStockTheory/#The-Liquidity-Constrained-Solution-as-a-Limit)
 
 # %% [markdown]
-# Defining $\chi(\wp)$ as the consumption function associated with any particular value of $\wp$, and defining $\hat{\chi}$ as the consumption function that would apply in the absence of the zero-income shocks but in the presence of an 'artificial' borrowing constraint requiring $a \geq 0$ (_a la_ Deaton (1991)), the paper shows that
+# Defining $\chi(\UnempPrb)$ as the consumption function associated with any particular probability of a zero-income shock $\UnempPrb$, and defining $\hat{\chi}$ as the consumption function that would apply in the absence of the transitory zero-income shocks but in the presence of an 'artificial' borrowing constraint requiring $a \geq 0$ (_a la_ Deaton (1991)), the paper shows that
 #
 # \begin{eqnarray}
-# \lim_{\wp \downarrow 0}~\chi(\wp) & = & \hat{\chi}
+# \lim_{\UnempPrb \downarrow 0}~\chi(\UnempPrb) & = & \hat{\chi}
 # \end{eqnarray}
 #
-# That is, as $\wp$ approaches zero the problem with uncertainty becomes identical to the problem that instead has constraints.  (See [Precautionary Saving and Liquidity Constraints](https://llorracc.github.io/LiqConstr) for a full treatment of the relationship between precautionary saving and liquidity constraints).
+# That is, as $\UnempPrb$ approaches zero the problem with uncertainty becomes identical to the problem that instead has constraints.  (See [Precautionary Saving and Liquidity Constraints](https://econ-ark.github.io/LiqConstr) for a full treatment of the relationship between precautionary saving and liquidity constraints).
 
 # %% [markdown]
-# ## [$c(m)$ can be Finite Even When Human Wealth Is Infinite](https://llorracc.github.io/BufferStockTheory/#When-The-GIC-Fails)
+# ## [$\cFunc(m)$ can be Finite Even When Human Wealth Is Infinite](https://econ-ark.github.io/BufferStockTheory/#When-The-GICRaw-Fails)
 #
-# In the perfect foresight model, if $\mathsf{R} < \Gamma$ the PDV of future labor income approaches infinity and so the limiting consumption function is $c(m) = \infty$ for all $m$.  Many models have no well-defined solution when human wealth is infinite.
+# In the perfect foresight model, if $\Rfree < \PermGroFac$ the PDV of future labor income approaches infinity as the horizon extends and so the limiting consumption function is $c(m) = \infty$ for all $m$.  Many models have no well-defined limiting solution when human wealth is infinite.
 #
 # The presence of uncertainty changes this: Even when limiting human wealth is infinite, the limiting consumption function is finite for all values of $m$.
 #
 # This is because uncertainty imposes a "natural borrowing constraint" that deters the consumer from borrowing against their unbounded (but uncertain) future labor income.
 
 # %% [markdown]
-# A [table](https://llorracc.github.io/BufferStockTheory/#Sufficient-Conditions-For-Nondegenerate-Solution) puts this result in the context of implications of other conditions and restrictions.
+# A [table](https://econ-ark.github.io/BufferStockTheory/#Sufficient-Conditions-For-Nondegenerate-Solution) puts this result in the context of implications of other conditions and restrictions.
 #
 #
 
 # %% [markdown]
-# ## [If the GIC-Nrm Holds, $\exists$ a finite 'target' $m$](https://llorracc.github.io/BufferStockTheory/#onetarget)
+# For a given $m_{t}$ what is the $c_t$ ($=\rightarrow a_{t}$) such that for that $a_{t}$ we have that
 #
-# Section [There Is Exactly One Target $m$ Ratio, Which Is Stable](https://llorracc.github.io/BufferStockTheory/#onetarget) shows that, under parameter values for which the limiting consumption function exists, if the GIC-Nrm holds then there will be a value $\check{m}$ such that:
+# \begin{align}
+# E_{t}[m_{t+1}-m_{t}] & < 0  \\
+# E_{t}[(\Rfree/(\PermGroFac \permShk_{t+1})) (m_{t}-c(m_{t}))]+1 & < m_{t} \\
+# (\Rfree/(\PermGroFac )) a_{t}E_{t}[(1/\permShk_{t+1})]+1 & < m_{t} \\
+# (m_{t}-\mathrm{c}_{t}(m_{t}))\bar{\mathcal{R}}+1 & < m_{t} \\
+# m_{t}(1-1/\bar{\mathcal{R}})+1 & < \mathrm{c}_{t}(m_{t})
+# \end{align}
+#
+
+# %% [markdown]
+# ## [Unique and Stable Values of $\mNrm$](https://econ-ark.github.io/BufferStockTheory/#Unique-Stable-Points)
+#
+# Assuming that the **FVAC** and **WRIC** hold so that the problem has a nondegenerate solution, under more stringent conditions its dynamics can also be shown to exhibit certain kinds of stability.  Two particularly useful kinds of stability are existence of a 'target' value of market resources $\Trg{\mNrm}$ and a 'pseudo-steady-state' value $\StE{\mNrm}$.
+#
+# ### [If the GIC-Nrm Holds, $\exists$ a finite 'target' $\mNrm$](https://econ-ark.github.io/BufferStockTheory/#onetarget)
+#
+# Section [Individual Target Wealth](https://econ-ark.github.io/BufferStockTheory/#onetarget) shows that, under parameter values for which the limiting consumption function exists, if the [GICNrm](https://econ-ark.github.io/BufferStockTheory/#GICNrm) holds then there will be a value $\Trg{m}$ such that:
 #
 # \begin{eqnarray*}
-# \mathbb{E}[m_{t+1}] & > & m_{t}~\text{if $m_{t} < \check{m}$} \\
-# \mathbb{E}[m_{t+1}] & < & m_{t}~\text{if $m_{t} > \check{m}$} \\
-# \mathbb{E}[m_{t+1}] & = & m_{t}~\text{if $m_{t} = \check{m}$}
+# \Ex[m_{t+1}] & > & m_{t}~\text{if $m_{t} < \Trg{m}$} \\
+# \Ex[m_{t+1}] & < & m_{t}~\text{if $m_{t} > \Trg{m}$} \\
+# \Ex[m_{t+1}] & = & m_{t}~\text{if $m_{t} = \Trg{m}$}
 # \end{eqnarray*}
 #
-# Define 
-#
-# \begin{align*}
-# \tilde{\psi} & = (\mathbb{E}_{t}[\psi_{t+1}^{-1}])^{-1}
-# \\ \tilde{\Gamma} & = \Gamma \tilde{\psi}
-# \end{align*}
-#
-# and note that $\tilde{\psi} < 1$
-#
-# We can solve for this value implicitly:
-# \begin{align*}
-# \mathbb{E}[m_{t+1}] & = (\mathsf{R}/\tilde{\Gamma}) (m_{t}-c(m_{t}))+1
-# \\ \check{m} & = (\mathsf{R}/\tilde{\Gamma}) (\check{m}-c(\check{m}))+1
-# \\ \check{m} - 1 & = (\mathsf{R}/\tilde{\Gamma}) (\check{m}-c(\check{m}))
-# \\ (\check{m} - 1)(\tilde{\Gamma}/\mathsf{R})  & = \check{m}-c(\check{m})
-# \\  c(\check{m}) & = \check{m}-(\check{m} - 1)(\tilde{\Gamma}/\mathsf{R})
-# \\  c(\check{m}) & = \check{m}(1-(\tilde{\Gamma}/\mathsf{R})) +(\tilde{\Gamma}/\mathsf{R})
-# \end{align*}
-# or find it more simply using the fact that the slope is monotonic and continuous so we can differentiate:
-# \begin{align*}
-# \\  c^{\prime}(\check{m}) & = (1-(\tilde{\Gamma}/\mathsf{R}))
-# \end{align*}
-#
-#
-# Expression in `addSSmNrm` code:
-# \begin{align*}
-#   = (1 - \Gamma/\mathsf{R}) m + (\Gamma/R)
-# \end{align*}
-#
-
-# %% [markdown]
-# ## Unique and Stable `Target` Ratios
-#
-# (first part is same as before)
-#
-# The paper examines a second special value of $m$ that defines a somewhat different kind of target.
-#
-# $\hat{m}$ is defined as a value of $m$ at which the consumer expects `balanced growth` in their market resources and their permanent income:
+# [An equation](https://econ-ark.github.io/BufferStockTheory/#mTargImplicit) in the paper tells us that, for the expected normalized interest factor $\bar{\RNrm}=\mathbb{E}[\Rfree/(\PermGroFac \PermShk)]$, if $\mNrm_{t}=\Trg{m}$ then:
 #
 # \begin{align}
-# \mathbb{E}_{t}[\mathbf{m}_{t+1}]/\mathbf{m}_{t} & = \mathbb{E}_{t}[\mathbf{p}_{t+1}/\mathbf{p}_{t}]
-# \\ \mathbb{E}_{t}[{m}_{t+1}\mathbf{p}_{t+1}]/m_{t}\mathbf{p}_{t} & = \mathbb{E}_{t}[\Gamma\mathbf{p}_{t}\psi_{t+1}/\mathbf{p}_{t}]
-# \\ \mathbb{E}_{t}[{m}_{t+1}\Gamma \psi_{t+1}]/m_{t} & = \Gamma
-# \\ \mathbb{E}_{t}[{m}_{t+1} \psi_{t+1}] & = m_{t}
+# (\Trg{\mNrm}-\cFunc(\Trg{\mNrm}))\bar{\RNrm}+1 & = \Trg{\mNrm}
+# %\\ \Trg{\mNrm}(1-\bar{\RNrm}^{-1})+\bar{\RNrm}^{-1} & = \Trg{\cNrm}
+# %\\ \Trg{\cNrm} & = \Trg{\mNrm} - (\Trg{\mNrm} - 1)\bar{\RNrm}^{-1}
 # \end{align}
 #
-# But
+# which can be solved numerically for the unique $\mNrm$ that satisfies it.
+#
+# ### [If the GIC Holds, $\exists$ a finite 'pseudo-steady-state' $\mNrm$](https://econ-ark.github.io/BufferStockTheory/#Collective-Stability)
+#
+# Section [Collective Stability and the Pseudo-Steady-State](https://econ-ark.github.io/BufferStockTheory/#Collective-Stability) shows that, under parameter values for which the limiting consumption function exists, if the **GIC** holds then there will be a value $\StE{m}$ such that:
+#
+# \begin{eqnarray*}
+# \Ex_{t}[\mLev_{t+1}/\mLev_{t}] & > & \PermGroFac~\text{if $m_{t} < \StE{m}$} \\
+# \Ex_{t}[\mLev_{t+1}/\mLev_{t}] & < & \PermGroFac~\text{if $m_{t} > \StE{m}$} \\
+# \Ex_{t}[\mLev_{t+1}/\mLev_{t}] & = & \PermGroFac~\text{if $m_{t} = \StE{m}$}
+# \end{eqnarray*}
+#
+# [An equation](https://econ-ark.github.io/BufferStockTheory/#balgrostableSolve) in the paper tells us that if $\mNrm_{t}=\StE{m}$ then:
+#
 # \begin{align}
-# \mathbb{E}[m_{t+1}] & =\mathbb{E}\left[\psi_{t+1}\left((\mathsf{R}/\Gamma \psi_{t+1}) (m_{t}-c(m_{t}))+\theta_{t+1}\right)\right]
-# \\ & =\mathbb{E}\left[\left((\mathsf{R}/\Gamma) (m_{t}-c(m_{t}))+\psi_{t+1}\theta_{t+1}\right)\right]
-# \\ & =(\mathsf{R}/\Gamma) (m_{t}-c(m_{t}))+1
+# (\StE{\mNrm}-\cFunc(\StE{\mNrm}))\RNrm+1 & = \StE{\mNrm}
 # \end{align}
 #
-# And the target will be
-# \begin{align}
-# \hat{m} & =(\mathsf{R}/\Gamma) (\hat{m}-c(\hat{m}))+1
-# \\ \hat{m}-1 & =(\mathsf{R}/\Gamma) (\hat{m}-c(\hat{m}))
-# \\ (\Gamma/\mathsf{R})(\hat{m}-1) & =\hat{m}-c(\hat{m})
-# \\ c(\hat{m}) & = \hat{m}(1-(\Gamma/\mathsf{R})) +(\Gamma/\mathsf{R})
-# \end{align}
+# which can be solved numerically for the unique $\StE{\mNrm}$ that satisfies it.
 #
-
-# %% [markdown]
-# ## [If the GIC Fails, Target Wealth is Infinite ](https://llorracc.github.io/BufferStockTheory/#The-GIC)
 #
-# [A figure](https://llorracc.github.io/BufferStockTheory/#FVACnotGIC) depicts a solution when the **FVAC** (Finite Value of Autarky Condition) and **WRIC** hold (so that the model has a solution) but the **GIC** (Growth Impatience Condition) fails.  In this case the target wealth ratio is infinity.
+# ### [Example With Finite Pseudo-Steady-State But Infinite Target Wealth](https://econ-ark.github.io/BufferStockTheory/#GICNrmFailsButGICRawHolds)
 #
-# The parameter values in this specific example are:
+# [A figure](https://econ-ark.github.io/BufferStockTheory/#GICNrmFailsButGICRawHolds) depicts a solution when the **FVAC** (Finite Value of Autarky Condition) and **WRIC** hold (so that the model has a solution), the **GIC** holds, so the model has a pseudo-steady-state $\StE{\mNrm}$, but the **GIC-Nrm** fails, so the model does not have an individual target wealth ratio $\Trg{\mNrm}$ (or, rather, the target wealth ratio is infinity, as can be seen by the fact that the level of $\cNrm$ is always below the level that would keep $\Ex_{t}[\Delta \mNrm_{t+1}] = 0$).
 #
-# | Param | Description | Code | Value |
-# | :---: | ---         | ---  | :---: |
-# | $\Gamma$ | Permanent Income Growth Factor | $\texttt{PermGroFac}$ | 1.00 |
-# | $\mathrm{\mathsf{R}}$ | Interest Factor | $\texttt{Rfree}$ | 1.04 |
-#
+# This example was constructed by quadrupling the variance of the permanent shocks from the baseline parameterization.  The extra precautionary saving induced by increased uncertainty is what pushes the agent into the region without a target wealth ratio.
 
-# %%
-# Construct the "GIC fails" example.
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# GICNrmFailsButGICRawHolds Example
 
-GIC_fails_dictionary = dict(base_params)
-GIC_fails_dictionary['Rfree']      = 1.04
-GIC_fails_dictionary['PermGroFac'] = [1.00]
+base_params['cycles'] = 0  # revert to default of infinite horizon
+GICNrmFailsButGICRawHolds_params = dict(base_params)
 
-GICFailsExample = IndShockConsumerType(
-    cycles=0, # cycles=0 makes this an infinite horizon consumer
-    verbose=0, # by default, check conditions shouldn't print out any information
-    **GIC_fails_dictionary)
+# Increase patience by increasing risk
+GICNrmFailsButGICRawHolds_params['permShkStd'] = [0.2]
+
+# Create an agent with these parameters
+GICNrmFailsButGICRawHolds = \
+    IndShockConsumerType(**GICNrmFailsButGICRawHolds_params,
+                         quietly=False,  # If true, output would be suppressed
+                         )
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# Solve the model for these parameter values
+GICNrmFailsButGICRawHolds.tolerance = 0.01
+
+GICNrmFailsButGICRawHolds.solve(
+    quietly=True,  # Suppress output
+)
+
+# Because we are trying to solve a problem very close to the critical patience
+# values, we want to do it with extra precision to be sure we've gotten the
+# answer right.  We can retrieve the distance between the last two solutions:
+
+distance_original = GICNrmFailsButGICRawHolds.solution[0].distance_last
+
+# But high precision would have slowed things down if we used it from the start
+
+# Instead, we can take the solution obtained above, and continue it but with
+# parameters that will yield a more precise answer:
+
+# Solve with quadruple the normal range
+GICNrmFailsButGICRawHolds.aXtraMax = GICNrmFailsButGICRawHolds.aXtraMax * 10
+
+# Solve over four times as many gridpoints
+GICNrmFailsButGICRawHolds.aXtraCount = GICNrmFailsButGICRawHolds.aXtraCount * 2
+
+GICNrmFailsButGICRawHolds.update_assets_grid()
+
+# Solve to a 10 times tighter degree of error tolerance
+GICNrmFailsButGICRawHolds.tolerance = GICNrmFailsButGICRawHolds.tolerance/10
+
+# When the solver reaches its tolerance threshold, it changes the solver
+# attribute stge_kind to have 'iter_status' of 'finished'
+# If we want to continue the solution (having changed something, as above)
+# To continue the solution from where we left off, we just change the
+# we just change 'iter_status' to 'iterator' and tell it to ".solve()" again
+
+GICNrmFailsButGICRawHolds.solution[0].stge_kind['iter_status'] = 'iterator'
+# continue solving
+
+# Setting messaging_level to NOTSET prints all info including progress
+GICNrmFailsButGICRawHolds.solve(messaging_level=logging.NOTSET, quietly=False)
+
+# Test whether the new solution meets a tighter tolerance than before:
+distance_now = GICNrmFailsButGICRawHolds.solution[0].distance_last
+print('\ndistance_now < distance_original: ' +
+      str(distance_now < distance_original))
+
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
+
+# Again increase the range
+GICNrmFailsButGICRawHolds.aXtraMax = GICNrmFailsButGICRawHolds.aXtraMax * 10
+
+# and gridpoints
+GICNrmFailsButGICRawHolds.aXtraCount = GICNrmFailsButGICRawHolds.aXtraCount * 2
+
+GICNrmFailsButGICRawHolds.update_assets_grid()
+
+# and decrease error tolerance
+GICNrmFailsButGICRawHolds.tolerance = GICNrmFailsButGICRawHolds.tolerance/10
 
 
-# %% [markdown]
-# The $\mathtt{IndShockConsumerType}$ tool automatically checks various parametric conditions, and will give a warning as well as the values of the factors if key conditions fail to be met.
-#
-# We can also directly check the conditions, asking for the maximum verbosity:
+GICNrmFailsButGICRawHolds.solution[0].stge_kind['iter_status'] = 'iterator'
+# continue solving
 
-# %%
-# The checkConditions method does what it sounds like it would
-# verbose=0: Print nothing;
-# verbose=3: Print all available info
-GICFailsExample.checkConditions(verbose=3)
+# continue
+GICNrmFailsButGICRawHolds.solve(messaging_level=logging.NOTSET, quietly=False)
 
-# %% [markdown]
-# ### The Sustainable Level of Consumption
-#
-# Next we define the $\mathrm{\mathbb{E}}_{t}[\Delta m_{t+1}]=0$ locus that shows the ‘sustainable’ level of spending at which $m$ is expected to remain unchanged.
+# Test whether the new solution meets a tighter tolerance than before:
+distance_now = GICNrmFailsButGICRawHolds.solution[0].distance_last
+print('\ndistance_now < distance_original: ' +
+      str(distance_now < distance_original))
 
-# %%
-# Calculate "Sustainable" consumption that leaves expected m unchanged
-# In the perfect foresight case, this is just permanent income plus interest income
-# A small adjustment is required to take account of the consequences of uncertainty
-# See "Growth Patience and the GIC" above
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# Plot GICNrmFailsButGICRawHolds
 
-# Get calibrated parameters to make code more readable
-LivPrb=baseAgent_Fin.LivPrb[0]
-Rfree=baseAgent_Fin.Rfree
-DiscFac=baseAgent_Fin.DiscFac
-CRRA=baseAgent_Fin.CRRA
+soln = GICNrmFailsButGICRawHolds.solution[0]  # Short alias for solution
 
-permShkPrbs=GICFailsExample.PermShkDstn[0].pmf
-permShkVals=GICFailsExample.PermShkDstn[0].X
-EPermGroFac=GICFailsExample.PermGroFac[0]
+Bilt, Pars, E_tp1_ = soln.Bilt, soln.Pars, soln.E_Next_
 
-# np.dot multiplies vectors; probability times value for each outcome is expectation
-EpermShkInv   = np.dot(permShkPrbs, permShkVals**(-1))    # $   \mathbb{E}[\psi^{-1}]      $
-InvEpermShkInv= (EpermShkInv) ** (-1)                     # $  (\mathbb{E}[\psi^{-1}])^{-1}$
-PermGroFac    = EPermGroFac * InvEpermShkInv               # Uncertainty-adjusted permanent growth factor
-ERNrmFac      = Rfree / PermGroFac                        # Interest factor normalized by uncertainty-adjusted growth
-ErNrmRte      = ERNrmFac - 1                              # Interest rate is interest factor - 1
-# "sustainable" C = P + (discounted) interest income
-# "sustainable" c = 1 + (discounted, normalized) interest income
-EmDelEq0      = lambda m : 1 + (m-1)*(ErNrmRte/ERNrmFac)  # "sustainable" c where E[Δ m] = 0
+fig, ax = plt.subplots(figsize=(12, 8))
 
-# %%
-# Plot GICFailsExample consumption function against the sustainable level of consumption
+[xMin, xMax] = [0.0, 8.0]
+yMin = 0.0
+yMax = E_tp1_.c_where_E_Next_m_tp1_minus_m_t_eq_0(xMax)*1.3
 
-GICFailsExample.solve()        # Above, we set up the problem but did not solve it
-GICFailsExample.unpack('cFunc')  # Make the consumption function easily accessible for plotting
-m = np.linspace(mPlotMin,5,mPts)
-c_Limt = GICFailsExample.cFunc[0](m)
-c_Sstn = EmDelEq0(m) # "sustainable" consumption
-plt.figure(figsize = (12,8))
-plt.plot(m,c_Limt,color="black")
-plt.plot(m,c_Sstn,color="black")
-plt.xlim(0,5.5)
-plt.ylim(0,1.6)
-plt.text(0,1.63,"$c$",fontsize = 26)
-plt.text(5.55,0,"$m$",fontsize = 26)
-plt.tick_params(labelbottom=False, labelleft=False,left='off',right='off',bottom='off',top='off')
-plt.text(1,0.6,"$c(m_{t})$",fontsize = 18)
+mPltVals = np.linspace(xMin, xMax, mPts)
+
 if latexExists:
-    plt.text(1.5,1.2,"$\mathbb{E}_{t}[\Delta m_{t+1}] = 0$",fontsize = 22)
+    c_Stable_Ind_txt = "$\Ex_{t}[\Delta m_{t+1}] = 0$"
+    c_Stable_Agg_txt = "$\Ex_{t}[\pmb{\mathrm{m}}_{t+1}/\pmb{\mathrm{m}}_{t}] = \PermGroFac$"
 else:
-    plt.text(1.5,1.2,"$\mathsf{E}_{t}[\Delta m_{t+1}] = 0$",fontsize = 22)
+    c_Stable_Ind_txt = "$\mathsf{E}_{t}[\Delta m_{t+1}] = 0$"
+    c_Stable_Agg_txt = "$\mathsf{E}_{t}[\mathbf{m}_{t+1}/\mathbf{m}_{t}] = \PermGroFac$"
 
-plt.arrow(0.98,0.62,-0.2,0,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
-plt.arrow(2.2,1.2,0.3,-0.05,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
+cVals_Lmting_color = "black"
+c_Stable_Agg_color = "black"  # "blue"
+c_Stable_Ind_color = "black"  # "red"
 
-make('FVACnotGIC') # Save figures (if appropriate/possible)
+cVals_Lmting = Bilt.cFunc(mPltVals)
+c_Stable_Ind = E_tp1_.c_where_E_Next_m_tp1_minus_m_t_eq_0(mPltVals)
+c_Stable_Agg = E_tp1_.c_where_E_Next_permShk_times_m_tp1_minus_m_t_eq_0(
+    mPltVals)
+
+cVals_Lmting_lbl, = ax.plot(mPltVals, cVals_Lmting, color=cVals_Lmting_color)
+c_Stable_Ind_lbl, = ax.plot(mPltVals, c_Stable_Ind,
+                            color=c_Stable_Ind_color, linestyle="dashed", label=c_Stable_Ind_txt)
+c_Stable_Agg_lbl, = ax.plot(mPltVals, c_Stable_Agg,
+                            color=c_Stable_Agg_color, linestyle="dotted", label=c_Stable_Agg_txt)
+
+ax.set_xlim(xMin, xMax)
+ax.set_ylim(yMin, yMax)
+ax.set_xlabel("$\mathit{m}$", fontweight='bold', fontsize=fsmid, loc="right")
+ax.set_ylabel("$\mathit{c}$", fontweight='bold', fontsize=fsmid, loc="top", rotation=0)
+# plt.text(xMin,yMax+0.03, "$c$", fontsize=26)
+# plt.text(xMax-0.05,yMin, "$m$", fontsize=26)
+ax.tick_params(labelbottom=False, labelleft=False, left='off',
+               right='off', bottom='off', top='off')
+
+#ax.arrow(0.98, 0.62, -0.2, 0, head_width=0.02, width=0.001,facecolor='black', length_includes_head='True')
+#ax.arrow(2.2, 1.2, 0.3, -0.05, head_width=0.02, width=0.001,facecolor='black', length_includes_head='True')
+
+ax.legend(handles=[c_Stable_Ind_lbl, c_Stable_Agg_lbl])
+ax.legend(prop=dict(size=fsmid))
+
+starting_search_at_m_t = 1.0
+mNrmStE = \
+    zero_point_of(E_tp1_.permGroShk_tp1_times_m_tp1_minus_m_t,
+                  starting_search_at_m_t)
+#mNrmStE = soln.mNrmStE
+cNrmStE = c_Stable_Agg = E_tp1_.permGroShk_times_m_tp1_minus_m_t_eq_0(
+    mNrmStE)
+#mNrmStE_lbl, = ax.plot([mNrmStE,mNrmStE],[yMin,yMax],color="green",linestyle="--",label='Pseudo-Steady-State: $\mathbb{E}_{t}[\pmb{m}_{t+1}/\pmb{m}_{t}]=\Gamma$')
+
+ax.plot(mNrmStE, cNrmStE, marker=".", markersize=15, color="black")  # Dot at StE point
+ax.text(1, 0.6, "$\mathrm{c}(m_{t})$", fontsize=fsmid)  # label cFunc
+
+if latexExists:
+    ax.text(mNrmStE+0.02, cNrmStE-0.10, r"$\nwarrow$", fontsize=fsmid)
+    ax.text(mNrmStE+0.25, cNrmStE-0.18, r"$\StE{m}~$", fontsize=fsmid)
+else:
+    ax.text(mNrmStE+0.02, cNrmStE-0.10, r"$\nwarrow$", fontsize=fsmid)
+    ax.text(mNrmStE+0.25, cNrmStE-0.18, r"$\StE{m}~$", fontsize=fsmid)
+
+makeFig('GICNrmFailsButGICRawHolds')
+print('Finite mNrmStE but infinite mNrmTrg')
+
 
 # %% [markdown]
-# In the [interactive dashboard](#interactive-dashboard), see what happens as changes in the time preference rate (or changes in risk $\sigma_\Psi$) change the consumer from _growth-patient_ $(\Phi > \tilde{\Gamma})$ to _growth-impatient_ ($\Phi < \tilde{\Gamma}$)
-
-# %%
-GICFailsExample.PermGroFac
-
-# %%
-# Conditions can also be checked without solving the model
-# verbose=0: Print nothing
-# verbose=3: Print all available results
-GICFailsExample.checkConditions(verbose=3)  
-
+# In the [interactive dashboard](#interactive-dashboard), see what happens as changes in the time preference rate (or changes in risk $\permShkStd$) change the consumer from _normalized-growth-patient_ $(\APF > \tilde{\PermGroFac})$ to _normalized-growth-impatient_ ($\APF < \tilde{\PermGroFac}$)
 
 # %% [markdown]
 # As a foundation for the remaining figures, we define another instance of the class $\texttt{IndShockConsumerType}$, which has the same parameter values as the instance $\texttt{baseAgent}$ defined previously but is solved to convergence (our definition of an infinite horizon agent type) instead of only 100 periods
+
+# %% {"tags": []}
+# Find the infinite horizon solution
+
+base_params['aXtraCount'] = base_params['aXtraCount'] * 20
+base_params['CubicBool'] = False
+base_params['cycles'] = 0  # Default for infinite horizon model
+
+baseAgent_Inf = IndShockConsumerType(
+    **base_params,
+    horizon='infinite',  # Infinite horizon
+    quietly=True)  # construct it silently
+
+
+# %% [markdown] {"tags": []}
+# ### [Target $m$, Expected Consumption Growth, and Permanent Income Growth](https://www.econ2.jhu.edu/people/ccarroll/papers/BufferStockTheory/#AnalysisoftheConvergedConsumptionFunction)
 #
-
-# %%
-# cycles=0 tells the solver to find the infinite horizon solution
-baseAgent_Inf = IndShockConsumerType(cycles=0,verbose=0, **base_params)
-
-baseAgent_Inf.solve()
-baseAgent_Inf.unpack('cFunc')
+# The next figure, [Analysis of the Converged Consumption Function](https://www.econ2.jhu.edu/people/ccarroll/papers/BufferStockTheory/#cGroTargetFig), shows expected growth factors for the levels of consumption $\cLev$ and market resources $\mLev$ as a function of the market resources ratio $\mNrm$ for a consumer behaving according to the converged consumption rule, along with the growth factor for $\mNrm$ itself, and the (constant) growth factors for consumption and expected permanent income, $\APF$ and $\PermGroFac$.
+#
+# The growth factor for consumption can be computed without knowing the _level_ of the consumer's permanent income:
+#
+# \begin{eqnarray*}
+# \Ex_{t}[\cLev_{t+1}/\cLev_{t}] & = & \Ex_{t}\left[\frac{\pLev_{t+1}\cFunc(m_{t+1})}{\pLev_{t}\cFunc(m_{t})}\right] \\
+# % & = & \Ex_{t}\left[\frac{\PermGroFac \permShk_{t+1} \pLev_{t}}{\pLev_{t}}\frac{\cFunc(m_{t+1})}{\cFunc(m_{t})}\right] \\
+# & = & \left[\frac{\PermGroFac \permShk_{t+1} \cFunc(m_{t+1})}{\cFunc(m_{t})}\right]
+# \end{eqnarray*}
+#
+# and similarly the growth factor for market resources is:
+#
+# \begin{eqnarray*}
+# \Ex_{t}[\mLev_{t+1}/\mLev_{t}]
+# & = & \Ex_{t}\left[\frac{\PermGroFac \permShk_{t+1} \mNrm_{t+1}} {\mNrm_{t}} \right]
+# \\ & = & \Ex_{t}\left[\frac{\PermGroFac \permShk_{t+1} (\aNrm_{t}\Rfree/(\PermGroFac \permShk_{t+1}))+\tranShk_{t+1}}
+# {\mNrm_{t}}\right]
+# %\\ & = & \Ex_{t}\left[\frac{\aNrm_{t}\Rfree+\tranShk_{t+1}}{\mNrm_{t}}\right]
+# \\ & = & \left[\frac{\aNrm_{t}\Rfree+1}{\mNrm_{t}}\right]
+# \end{eqnarray*}
+#
+#
 
 # %% [markdown]
-# ### [Target $m$, Expected Consumption Growth, and Permanent Income Growth](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#AnalysisoftheConvergedConsumptionFunction)
-#
-# The next figure, [Analysis of the Converged Consumption Function](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#cGroTargetFig), shows the expected consumption growth factor $\mathrm{\mathbb{E}}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}]$ for a consumer behaving according to the converged consumption rule.
-#
-# Conveniently, this can be computed without knowing the _level_ of the consumer's income:
-#
-# \begin{eqnarray}
-# \mathbb{E}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}] & = & \mathbb{E}_{t}\left[\frac{\mathbf{p}_{t+1}c_{t+1}(m_{t+1})}{\mathbf{p}_{t}c_{t}(m_{t})}\right] \\ 
-# & = & \mathbb{E}_{t}\left[\frac{\Gamma \psi_{t+1} \mathbf{p}_{t}}{\mathbf{p}_{t}}\frac{c_{t+1}(m_{t+1})}{c_{t}(m_{t})}\right] \\
-# & = & \mathbb{E}_{t}\left[\frac{\Gamma \psi_{t+1} c_{t+1}(m_{t+1})}{c_{t}(m_{t})}\right] 
-# \end{eqnarray}
+# For $\mNrm$ things are slightly more complicated:
+# \begin{eqnarray*}
+# \Ex_{t}[m_{t+1}]
+# & = & \Ex_{t}\left[(m_{t}-c_{t})(\Rfree/(\permShk_{t+1}\PermGroFac)) +\tranShk_{t+1}\right]\\
+# & = & a_{t}\Rfree\Ex_{t}\left[(\permShk_{t+1}\PermGroFac)^{-1}\right] +1 \\
+# \Ex_{t}\left[\frac{m_{t+1}}{m_{t}}\right] & = & \left(\frac{a_{t}\Rfree\Ex_{t}\left[(\permShk_{t+1}\PermGroFac)^{-1}\right]+1}{\mNrm_{t}}\right)
+# \end{eqnarray*}
 #
 
-# %%
-# Def a function to calc ratio of cLev_{t+1} to p_{t}
-def EcLev_tp1_Over_p_t(a):
-    '''
-    Taking end-of-period assets a as input, return ratio of expectation 
-    of next period's consumption to this period's permanent income 
+# %% {"jupyter": {"source_hidden": true}, "pycharm": {"name": "#%%\n"}, "tags": []}
+# Solve baseline parameters agent
+tweaked_params = deepcopy(base_params)
+tweaked_params['DiscFac'] = 0.970  # Tweak to make figure clearer
+baseAgent_Inf = IndShockConsumerType(
+    **tweaked_params, quietly=True)  # construct it silently
 
-    Inputs:
-       a: end-of-period assets
-    Returns:
-       EcLev_tp1_Over_p_{t}: next period's expected c level / current p
-    '''
-    # Extract parameter values to make code more readable
-    permShkVals=baseAgent_Inf.PermShkDstn[0].X
-    tranShkVals=baseAgent_Inf.TranShkDstn[0].X
-    permShkPrbs=baseAgent_Inf.PermShkDstn[0].pmf
-    tranShkPrbs=baseAgent_Inf.TranShkDstn[0].pmf
-    Rfree      =baseAgent_Inf.Rfree
-    EPermGroFac=baseAgent_Inf.PermGroFac[0]
-    
-    PermGrowFac_tp1 = EPermGroFac*permShkVals # Nonstochastic growth times idiosyncratic permShk
-    RNrmFac_tp1     = Rfree / PermGrowFac_tp1 # Growth-normalized interest factor 
-    # 'bank balances' b = end-of-last-period assets times normalized return factor
-    b_tp1 = RNrmFac_tp1*a
-    # expand dims of b_tp1 and use broadcasted sum of a column and a row vector
-    # to obtain a matrix of possible market resources next period
-    # because matrix mult is much much faster than looping to calc E
-    m_tp1_GivenTranAndPermShks = np.expand_dims(b_tp1, axis=1) + tranShkVals
-    # List of possible values of $\mathbf{c}_{t+1}$ (Transposed by .T)
-    cRat_tp1_GivenTranAndPermShks = baseAgent_Inf.cFunc[0](m_tp1_GivenTranAndPermShks).T
-    cLev_tp1_GivenTranAndPermShks = cRat_tp1_GivenTranAndPermShks*PermGrowFac_tp1
-    # compute expectation over perm shocks by right multiplying with probs
-    EOverPShks_cLev_tp1_GivenTranShkShks = np.dot(cLev_tp1_GivenTranAndPermShks, permShkPrbs)
-    # finish expectation over trans shocks by right multiplying with probs
-    EcLev_tp1_Over_p_t = np.dot(EOverPShks_cLev_tp1_GivenTranShkShks, tranShkPrbs)
-    # return expected consumption
-    return EcLev_tp1_Over_p_t
+baseAgent_Inf.solve(
+    quietly=False, messaging_level=logging.INFO)  # Solve it with info
 
-# %%
-# Calculate the expected consumption growth factor
-# mBelwTrg defines the plot range on the left of target m value (e.g. m <= target m)
-mNrmTrg=baseAgent_Inf.solution[0].mNrmSS
-mBelwTrg = np.linspace(1,mNrmTrg,50) 
-c_For_mBelwTrg = baseAgent_Inf.cFunc[0](mBelwTrg)
-a_For_mBelwTrg = mBelwTrg-c_For_mBelwTrg
-EcLev_tp1_Over_p_t_For_mBelwTrg = [EcLev_tp1_Over_p_t(i) for i in a_For_mBelwTrg]
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# Plot growth rates
 
-# mAbveTrg defines the plot range on the right of target m value (e.g. m >= target m)
-mAbveTrg = np.linspace(mNrmTrg,1.9,50)
+soln = baseAgent_Inf.solution[0]        # shorthand
+Bilt, Pars, E_Next_ = soln.Bilt, soln.Pars, soln.E_Next_  # shorthand
+# Retrieve parameters (makes code more readable)
+Rfree, DiscFac, CRRA, G = Pars.Rfree, Pars.DiscFac, Pars.CRRA, Pars.PermGroFac
 
-# EcGro_For_mAbveTrg: E [consumption growth factor] when m_{t} is below target m
-EcGro_For_mBelwTrg = np.array(EcLev_tp1_Over_p_t_For_mBelwTrg)/c_For_mBelwTrg
+color_cons, color_mrktLev, color_mrktRat, color_perm = "blue", "red", "green", "black"
 
-c_For_mAbveTrg = baseAgent_Inf.cFunc[0](mAbveTrg)
-a_For_mAbveTrg = mAbveTrg-c_For_mAbveTrg
-EcLev_tp1_Over_p_t_For_mAbveTrg = [EcLev_tp1_Over_p_t(i) for i in a_For_mAbveTrg]
+mPlotMin, mCalcMax, mPlotMax = 0.0, 50, 2.20
 
-# EcGro_For_mAbveTrg: E [consumption growth factor] when m_{t} is bigger than target m_{t}
-EcGro_For_mAbveTrg = np.array(EcLev_tp1_Over_p_t_For_mAbveTrg)/c_For_mAbveTrg 
+# Get StE and target values
+mNrmStE, mNrmTrg = Bilt.mNrmStE, Bilt.mNrmTrg
 
-# %%
-# Define a function to construct the arrows on the consumption growth rate function
-def arrowplot(axes, x, y, narrs=15, dspace=0.5, direc='neg',
-              hl=0.01, hw=3, c='black'):
-    '''
-    The function is used to plot arrows given the data x and y.
+pts_num = 200  # Plot this many points
 
-    Input:
-        narrs  :  Number of arrows that will be drawn along the curve
+m_pts = np.linspace(1, mPlotMax, pts_num)   # values of m for plot
+c_pts = soln.cFunc(m_pts)                   # values of c for plot
+a_pts = m_pts - c_pts                       # values of a
 
-        dspace :  Shift the position of the arrows along the curve.
-                  Should be between 0. and 1.
+Ex_cLev_tp1_Over_pLev_t = [
+    soln.E_Next_.cLev_tp1_Over_pLev_t_from_a_t(a) for a in a_pts]
+Ex_mLev_tp1_Over_pLev_t = [
+    soln.E_Next_.mLev_tp1_Over_pLev_t_from_a_t(a) for a in a_pts]
+Ex_m_tp1_from_a_t = [
+    soln.E_Next_.m_tp1_from_a_t(a) for a in a_pts]
 
-        direc  :  can be 'pos' or 'neg' to select direction of the arrows
+Ex_cLevGro = np.array(Ex_cLev_tp1_Over_pLev_t)/c_pts
+Ex_mLevGro = np.array(Ex_mLev_tp1_Over_pLev_t)/m_pts
+Ex_mRatGro = np.array(Ex_m_tp1_from_a_t)/m_pts
 
-        hl     :  length of the arrow head
-
-        hw     :  width of the arrow head
-
-        c      :  color of the edge and face of the arrow head
-    '''
-
-    # r is the distance spanned between pairs of points
-    r = np.sqrt(np.diff(x)**2+np.diff(y)**2)
-    r = np.insert(r, 0, 0.0)
-
-    # rtot is a cumulative sum of r, it's used to save time
-    rtot = np.cumsum(r)
-
-    # based on narrs set the arrow spacing
-    aspace = r.sum() / narrs
-
-    if direc is 'neg':
-        dspace = -1.*abs(dspace)
-    else:
-        dspace = abs(dspace)
-
-    arrowData = list() # will hold tuples of x,y,theta for each arrow
-    arrowPos = aspace*(dspace) # current point on walk along data
-                                 # could set arrowPos to 0 if you want
-                                 # an arrow at the beginning of the curve
-
-    ndrawn = 0
-    rcount = 1
-    while arrowPos < r.sum() and ndrawn < narrs:
-        x1,x2 = x[rcount-1],x[rcount]
-        y1,y2 = y[rcount-1],y[rcount]
-        da = arrowPos-rtot[rcount]
-        theta = np.arctan2((x2-x1),(y2-y1))
-        ax = np.sin(theta)*da+x1
-        ay = np.cos(theta)*da+y1
-        arrowData.append((ax,ay,theta))
-        ndrawn += 1
-        arrowPos+=aspace
-        while arrowPos > rtot[rcount+1]:
-            rcount+=1
-            if arrowPos > rtot[-1]:
-                break
-
-    for ax,ay,theta in arrowData:
-        # use aspace as a guide for size and length of things
-        # scaling factors were chosen by experimenting a bit
-
-        dx0 = np.sin(theta)*hl/2.0 + ax
-        dy0 = np.cos(theta)*hl/2.0 + ay
-        dx1 = -1.*np.sin(theta)*hl/2.0 + ax
-        dy1 = -1.*np.cos(theta)*hl/2.0 + ay
-
-        if direc is 'neg' :
-            ax0 = dx0
-            ay0 = dy0
-            ax1 = dx1
-            ay1 = dy1
-        else:
-            ax0 = dx1
-            ay0 = dy1
-            ax1 = dx0
-            ay1 = dy0
-
-        axes.annotate('', xy=(ax0, ay0), xycoords='data',
-                xytext=(ax1, ay1), textcoords='data',
-                arrowprops=dict( headwidth=hw, frac=1., ec=c, fc=c))
-
-
-# %%
-# Plot consumption growth as a function of market resources
-
-# Retrieve parameters (makes code readable)
-Rfree      = baseAgent_Inf.Rfree
-DiscFac    = baseAgent_Inf.DiscFac
-CRRA       = baseAgent_Inf.CRRA
-EPermGroFac= baseAgent_Inf.PermGroFac[0]
-mNrmTrg    = baseAgent_Inf.solution[0].mNrmSS
-
-# Calculate Absolute Patience Factor Phi = lower bound of consumption growth factor
+# Absolute Patience Factor = lower bound of consumption growth factor
 APF = (Rfree*DiscFac)**(1.0/CRRA)
 
-fig = plt.figure(figsize = (12,8))
-ax  = fig.add_subplot(111)
+fig, ax = plt.subplots(figsize=(12, 8))
+
 # Plot the Absolute Patience Factor line
-ax.plot([0,1.9],[APF,APF],color="black")
+ax.plot([0, mPlotMax], [APF, APF], color=color_cons)
 
 # Plot the Permanent Income Growth Factor line
-ax.plot([0,1.9],[EPermGroFac,EPermGroFac],color="black")
+ax.plot([0, mPlotMax], [G, G], color=color_perm)
 
-# Plot the expected consumption growth factor on the left side of target m
-ax.plot(mBelwTrg,EcGro_For_mBelwTrg,color="black")
+# Plot the expected consumption growth factor
+ax.plot(m_pts, Ex_cLevGro, color=color_cons)
 
-# Plot the expected consumption growth factor on the right side of target m
-ax.plot(mAbveTrg,EcGro_For_mAbveTrg,color="black")
+# Plot the expect growth for the level of market resources
+ax.plot(m_pts, Ex_mLevGro, color=color_mrktLev)
 
-# Plot the arrows
-arrowplot(ax, mBelwTrg,EcGro_For_mBelwTrg)
-arrowplot(ax, mAbveTrg,EcGro_For_mAbveTrg, direc='pos')
-fsbig=26
-fsmid=22
+# Plot the expect growth for the market resources ratio
+ax.plot(m_pts, Ex_mRatGro, color=color_mrktRat)
 
-# Plot the target m
-ax.plot([mNrmTrg,mNrmTrg],[0,1.4],color="black",linestyle="--")
-ax.set_xlim(1,2.10)
-ax.set_ylim(0.98,1.08)
-ax.text(1,1.082,r'$\text{Growth Rate}$',fontsize = fsbig,fontweight='bold')
-ax.text(2.105,0.975,"$m_{t}$",fontsize = fsbig,fontweight='bold')
+# Axes limits
+GroFacMin, GroFacMax, xMin = 0.98, 1.06, 1.1
+
+# Vertical lines at StE and Trg
+mNrmStE_lbl, = ax.plot([mNrmStE, mNrmStE], [0, GroFacMax], color=color_mrktLev, linestyle="--",
+                       label='$\StE{m}:$ Pseudo-Steady-State: $\mathbb{E}_{t}[\pmb{\mathrm{m}}_{t+1}/\pmb{\mathrm{m}}_{t}]=\Gamma$')
+ax.text(mNrmStE-0.12, 0.981, r'$\StE{m}\rightarrow$', fontsize=fsbig, fontweight='bold')
+ax.legend(handles=[mNrmStE_lbl])
+
+ax.set_xlim(xMin, mPlotMax * 1.1)
+ax.set_ylim(GroFacMin, GroFacMax)
+
+if mNrmTrg:
+    mNrmTrg_lbl, = ax.plot([mNrmTrg, mNrmTrg], [0, GroFacMax], color=color_mrktRat,
+                           linestyle="dotted", label=r'$\Trg{m}:$ Target: $\mathbb{E}_{t}[m_{t+1}]=m_{t}$')
+    ax.text(mNrmTrg+0.00, 0.981, r'$\leftarrow\Trg{m}$', fontsize=fsbig, fontweight='bold')
+    ax.legend(handles=[mNrmStE_lbl, mNrmTrg_lbl])
+ax.legend(prop=dict(size=fsmid))
+
+# If latex installed on system, plotting can look better
 if latexExists:
-    ax.text(1.91,1.01,"$\mathbb{E}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}]$",fontsize = fsmid,fontweight='bold')
+    ax.text(mPlotMax+0.01, Ex_cLevGro[-1],
+            r"$\Ex_{t}[\cLev_{t+1}/\cLev_{t}]$", fontsize=fsmid, fontweight='bold')
+    ax.text(mPlotMax*0.505, 1.0075+0.02*0,
+            r"$\Ex_{t}[\mLev_{t+1}/\mLev_{t}] \rightarrow$", fontsize=fsmid, fontweight='bold')
+    ax.text(mPlotMax+0.01, APF-0.001,
+            r'$\pmb{\text{\TH}} = (\Rfree\DiscFac)^{1/\CRRA}$', fontsize=fsmid, fontweight='bold')
 else:
-    ax.text(1.91,1.01,"$\mathsf{E}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}]$",fontsize = fsmid,fontweight='bold')
-ax.text(mNrmTrg-0.02,0.974, r'$\check{m}$', fontsize = fsbig,fontweight='bold')
-ax.tick_params(labelbottom=False, labelleft=False,left='off',right='off',bottom='off',top='off')
-if latexExists:
-    ax.text(1.91,0.998,r'$\pmb{\text{\TH}} = (\mathsf{R}\beta)^{1/\rho}$',fontsize = fsmid,fontweight='bold')
-else:
-    ax.text(1.91,0.998,r'$\Phi = (\mathsf{\mathsf{R}}\beta)^{1/\rho}$',fontsize = fsmid,fontweight='bold')
+    ax.text(mPlotMax+0.01, Ex_cLevGro[-1],
+            r"$\mathsf{E}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}]$", fontsize=fsmid, fontweight='bold')
+    ax.text(mPlotMax*0.505, 1.0075+0.02*0,
+            r"$\mathsf{E}_{t}[\mathbf{m}_{t+1}/\mathbf{m}_{t}] \rightarrow$", fontsize=fsmid, fontweight='bold')
+    ax.text(mPlotMax+0.01, APF-0.001,
+            r'$\Phi = (\mathsf{\Rfree}\DiscFac)^{1/\CRRA}$', fontsize=fsmid, fontweight='bold')
 
-ax.text(1.91,1.03, r'$\Gamma$',fontsize = fsmid,fontweight='bold')
-make('cGroTargetFig')
+# Ticks
+ax.tick_params(labelbottom=False, labelleft=True, left='off', right='on', bottom='on', top='off')
+plt.setp(ax.get_yticklabels(), fontsize=fssml)
 
+ax.set_ylabel('Growth Factors', fontsize=fsmid, fontweight='bold')
+makeFig('cGroTargetFig')
 
 # %% [markdown]
-# In the [interactive dashboard](#interactive-dashboard) see how target wealth changes when the consumer's time preference factor β or the growth factor Γ change.
-
-# %% [markdown]
-# ### [Consumption Function Bounds](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#AnalysisOfTheConvergedConsumptionFunction)
-# [The next figure](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#cFuncBounds)
+# ### [Consumption Function Bounds](https://www.econ2.jhu.edu/people/ccarroll/papers/BufferStockTheory/#AnalysisOfTheConvergedConsumptionFunction)
+# [The next figure](https://www.econ2.jhu.edu/people/ccarroll/papers/BufferStockTheory/#cFuncBounds)
 # illustrates theoretical bounds for the consumption function.
 #
-# We define two useful variables: lower bound of $\kappa$ (marginal propensity to consume) and limit of $h$ (Human wealth), along with some functions such as the limiting perfect foresight consumption function $\bar{c}(m)$, the upper bound function $\bar{\bar c}(m)$, and the lower bound function \underline{_c_}$(m)$.
+# We define two useful variables: lower bound of $\MPC$ (marginal propensity to consume) and limit of $h$ (Human wealth), along with some functions such as the limiting perfect foresight consumption function $\bar{c}(m)$, the upper bound function $\bar{\bar c}(m)$, and the lower bound function $\tilde{c}$(m).
 
-# %%
-# Define κ_Min, h_inf and perfect foresight consumption function, upper bound of consumption function and lower
-# bound of consumption function.
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# Define mpc_Min, h_inf and PF consumption function, upper and lower bound of c function
 
-# Retrieve parameters (makes code readable)
-Rfree      = baseAgent_Inf.Rfree
-DiscFac    = baseAgent_Inf.DiscFac
-CRRA       = baseAgent_Inf.CRRA
-EPermGroFac= EPermGroFac
-mNrmTrg    = baseAgent_Inf.solution[0].mNrmSS
-UnempPrb   = baseAgent_Inf.UnempPrb
+baseAgent_Inf = IndShockConsumerType(**base_params, quietly=True)  # construct it silently
+baseAgent_Inf.solve(quietly=True)  # Solve it with info
+soln = baseAgent_Inf.solution[0]
 
-κ_Min = 1.0-(Rfree**(-1.0))*(Rfree*DiscFac)**(1.0/CRRA)
-h_inf = (1.0/(1.0-EPermGroFac/Rfree))
-cFunc_Uncnst = lambda m: (h_inf -1)* κ_Min + κ_Min*m
-cFunc_TopBnd = lambda m: (1 - UnempPrb ** (1.0/CRRA)*(Rfree*DiscFac)**(1.0/CRRA)/Rfree)*m
-cFunc_BotBnd = lambda m: (1 -(Rfree*DiscFac)**(1.0/CRRA)/Rfree) * m
+UnempPrb = Pars.IncShkDstn.parameters['UnempPrb']
+
+# Return Patience Factor
+RPF = ((Rfree * DiscFac)**(1.0/CRRA)/Rfree)
+
+mpc_Min = 1.0-RPF
+mpc_Max = 1.0 - (UnempPrb**(1/CRRA)) * RPF
+h_inf = (1.0/(1.0-G/Rfree))
 
 
-# %%
+def cFunc_Uncnst(m): return mpc_Min * m + (h_inf - 1) * mpc_Min
+def cFunc_TopBnd(m): return mpc_Max * m
+def cFunc_BotBnd(m): return mpc_Min * m
+
+
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
 # Plot the consumption function and its bounds
 
-cMaxLabel=r'$\overline{c}(m) = (m-1+h)\underline{\kappa}$'
-cMinLabel=r'Lower Bound: $\underline{c}(m)= (1-\pmb{\text{\TH}}_{R})\underline{\kappa}m$'
+cMaxLabel = r'$\overline{c}(m)= (m-1+h)\tilde{\kappa}$'
+cMinLabel = r'Lower Bound: $\tilde{c}(m)= (1-\pmb{\text{\TH}}_{R})\tilde{\kappa}m$'
 if not latexExists:
-    cMaxLabel=r'$\overline{c}(m) = (m-1+h)κ̲' # Use unicode kludge
-    cMinLabel=r'Lower Bound: c̲$(m)= (1-\Phi_{R})m = κ̲ m$'
+    cMaxLabel = r'$\overline{c}(m) = (m-1+h)mpc̲'  # Use unicode kludge
+    cMinLabel = r'Lower Bound: c̲$(m)= (1-\Phi_{R})m = mpc̲ m$'
 
+mPlotMin = 0.0
 mPlotMax = 25
-mPlotMin = 0
 # mKnk is point where the two upper bounds meet
-mKnk = ((h_inf-1)* κ_Min)/((1 - UnempPrb**(1.0/CRRA)*(Rfree*DiscFac)**(1.0/CRRA)/Rfree)-κ_Min)
+mKnk = ((h_inf-1) * mpc_Min)/((1 - UnempPrb**(1.0/CRRA)*(Rfree*DiscFac)**(1.0/CRRA)/Rfree)-mpc_Min)
 mBelwKnkPts = 300
 mAbveKnkPts = 700
-mBelwKnk = np.linspace(mPlotMin,mKnk,mBelwKnkPts)
-mAbveKnk = np.linspace(mKnk,mPlotMax,mAbveKnkPts)
-mFullPts = np.linspace(mPlotMin,mPlotMax,mBelwKnkPts+mAbveKnkPts)
+mBelwKnk = np.linspace(mPlotMin, mKnk, mBelwKnkPts)
+mAbveKnk = np.linspace(mKnk, mPlotMax, mAbveKnkPts)
+mFullPts = np.linspace(mPlotMin, mPlotMax, mBelwKnkPts+mAbveKnkPts)
 
-plt.figure(figsize = (12,8))
-plt.plot(mFullPts,baseAgent_Inf.cFunc[0](mFullPts), color="black")
-plt.plot(mBelwKnk,cFunc_Uncnst(mBelwKnk)          , color="black",linestyle="--")
-plt.plot(mAbveKnk,cFunc_Uncnst(mAbveKnk)          , color="black",linewidth=2.5)
-plt.plot(mBelwKnk,cFunc_TopBnd(mBelwKnk)          , color="black",linewidth=2.5)
-plt.plot(mAbveKnk,cFunc_TopBnd(mAbveKnk)          , color="black",linestyle="--")
-plt.plot(mBelwKnk,cFunc_BotBnd(mBelwKnk)          , color="black",linewidth=2.5)
-plt.plot(mAbveKnk,cFunc_BotBnd(mAbveKnk)          , color="black",linewidth=2.5)
-plt.tick_params(labelbottom=False, labelleft=False,left='off',right='off',bottom='off',top='off')
-plt.xlim(mPlotMin,mPlotMax)
-plt.ylim(mPlotMin,1.12*cFunc_Uncnst(mPlotMax))
-plt.text(mPlotMin,1.12*cFunc_Uncnst(mPlotMax)+0.05,"$c$",fontsize = 22)
-plt.text(mPlotMax+0.1,mPlotMin,"$m$",fontsize = 22)
-plt.text(2.5,1,r'$c(m)$',fontsize = 22,fontweight='bold')
+plt.figure(figsize=(12, 8))
+cTopMult = 1.12
+plt.plot(mFullPts, soln.cFunc(mFullPts), color="black")
+plt.plot(mBelwKnk, cFunc_Uncnst(mBelwKnk), color="black", linestyle="--")
+plt.plot(mAbveKnk, cFunc_Uncnst(mAbveKnk), color="black", linewidth=2.5)
+plt.plot(mBelwKnk, cFunc_TopBnd(mBelwKnk), color="black", linewidth=2.5)
+plt.plot(mAbveKnk, cFunc_TopBnd(mAbveKnk), color="black", linestyle="--")
+plt.plot(mBelwKnk, cFunc_BotBnd(mBelwKnk), color="black", linewidth=2.5)
+plt.plot(mAbveKnk, cFunc_BotBnd(mAbveKnk), color="black", linewidth=2.5)
+plt.tick_params(labelbottom=False, labelleft=False, left='off',
+                right='off', bottom='off', top='off')
+plt.xlim(mPlotMin, mPlotMax)
+plt.ylim(mPlotMin, cTopMult*cFunc_Uncnst(mPlotMax))
+plt.text(mPlotMin, cTopMult*cFunc_Uncnst(mPlotMax)+0.05, "$c$", fontsize=22)
+plt.text(mPlotMax+0.1, mPlotMin, "$m$", fontsize=22)
+plt.text(2.5, 1, r'$c(m)$', fontsize=22, fontweight='bold')
+upper_upper_bound_m = 4.6
 if latexExists:
-    plt.text(6,5,r'$\overline{\overline{c}}(m)= \overline{\kappa}m = (1-\wp^{1/\rho}\pmb{\text{\TH}}_{R})m$',fontsize = 22,fontweight='bold')
+    plt.text(upper_upper_bound_m+0.1, cFunc_TopBnd(upper_upper_bound_m), r'$~\leftarrow \overline{\overline{c}}(m)= \overline{\MPC}m = (1-\UnempPrb^{1/\CRRA}\pmb{\text{\TH}}_{R})m$',
+             fontsize=22, fontweight='bold')
 else:
-    plt.text(6,5,r'$\overline{\overline{c}}(m)= \overline{\kappa}m = (1-\wp^{1/\rho}\Phi_{R})m$',fontsize = 22,fontweight='bold')
-plt.text(2.2,3.8, cMaxLabel,fontsize = 22,fontweight='bold')
-plt.text(9,4.1,r'Upper Bound $ = $ Min $[\overline{\overline{c}}(m),\overline{c}(m)]$',fontsize = 22,fontweight='bold')
-plt.text(8,0.8,cMinLabel,fontsize = 22,fontweight='bold')
-plt.arrow(2.45,1.05,-0.5,0.02,head_width= 0.05,width=0.001,facecolor='black',length_includes_head='True')
-plt.arrow(2.15,3.88,-0.5,0.1,head_width= 0.05,width=0.001,facecolor='black',length_includes_head='True')
-plt.arrow(8.95,4.15,-0.8,0.05,head_width= 0.05,width=0.001,facecolor='black',length_includes_head='True')
-plt.arrow(5.95,5.05,-0.4,mPlotMin,head_width= 0.05,width=0.001,facecolor='black',length_includes_head='True')
-plt.arrow(14,0.70,0.5,-0.1,head_width= 0.05,width=0.001,facecolor='black',length_includes_head='True')
+    plt.text(6, 5, r'$\overline{\overline{c}}(m)= \overline{\MPC}m = (1-\UnempPrb^{1/\CRRA}\Phi_{R})m$',
+             fontsize=22, fontweight='bold')
+upper_bound_m = 12
+plt.text(
+    upper_bound_m, cFunc_Uncnst(upper_bound_m)-0.3, r'Upper Bound $ = $ Min $[\overline{\overline{c}}(m),\overline{c}(m)]$', fontsize=22, fontweight='bold')
+plt.text(8, 0.9, cMinLabel, fontsize=22, fontweight='bold')
+lower_unc_bound_m = 1.7
+lower_unc_bound_c = cFunc_Uncnst(lower_unc_bound_m)-0.2
+plt.text(lower_unc_bound_m, lower_unc_bound_c-0.2, cMaxLabel, fontsize=22, fontweight='bold')
+plt.arrow(2.45, 1.05, -0.5, 0.02, head_width=0.05, width=0.001,
+          facecolor='black', length_includes_head='True')
+plt.arrow(lower_unc_bound_m, lower_unc_bound_c, -0.5, 0.1, head_width=0.05, width=0.001,
+          facecolor='black', length_includes_head='True')
+plt.arrow(upper_bound_m, cFunc_Uncnst(upper_bound_m)-0.2, -0.8, 0.05, head_width=0.1, width=0.015,
+          facecolor='black', length_includes_head='True')
+unconst_m = 4.5
+plt.arrow(5.95, 5.05, -0.4, mPlotMin, head_width=0.05, width=0.001,
+          facecolor='black', length_includes_head='True')
+plt.arrow(14, 0.70, 0.5, -0.1, head_width=0.05, width=0.001,
+          facecolor='black', length_includes_head='True')
 
-make('cFuncBounds')
+makeFig('cFuncBounds')
 
 
 # %% [markdown]
-# ### [The Consumption Function and Target $m$](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#cFuncBounds)
+# ### [Upper and Lower Limits of the Marginal Propensity to Consume](https://www.econ2.jhu.edu/people/ccarroll/papers/BufferStockTheory/#MPCLimits)
 #
-# This figure shows the $\mathrm{\mathbb{E}}_{t}[\Delta m_{t+1}]=0$ locus and consumption function $c(m_{t})$, along with the intersection of these two functions, which defines the target value of $m$
-
-# %%
-# This just plots objects that have already been constructed
-
-mBelwTrg = np.linspace(mPlotMin,4,mPts)
-EmDelEq0 = lambda m:(EPermGroFac/Rfree)+(1.0-EPermGroFac/Rfree)*m
-cBelwTrg_Best = baseAgent_Inf.cFunc[0](mBelwTrg) # "best" = optimal c
-cBelwTrg_Sstn = EmDelEq0(mBelwTrg)               # "sustainable" c
-plt.figure(figsize = (12,8))
-plt.plot(mBelwTrg,cBelwTrg_Best, color="black")
-plt.plot(mBelwTrg,cBelwTrg_Sstn, color="black")
-plt.xlim(mPlotMin,3)
-plt.ylim(mPlotMin,1.45)
-plt.plot([mNrmTrg, mNrmTrg],[mPlotMin,2.5],color="black",linestyle="--")
-plt.tick_params(labelbottom=False, labelleft=False,left='off',right='off',bottom='off',top='off')
-plt.text(mPlotMin,1.47,r"$c$",fontsize = 26)
-plt.text(3.02,mPlotMin,r"$m$",fontsize = 26)
-if latexExists:
-    plt.text(2.3,0.94,r'$\mathbb{E}_{t}[\Delta m_{t+1}] = 0$',fontsize = 22,fontweight='bold')
-else:
-    plt.text(2.3,0.94,r'$\mathsf{E}_{t}[\Delta m_{t+1}] = 0$',fontsize = 22,fontweight='bold')
-plt.text(2.3,1.1,r"$c(m_{t})$",fontsize = 22,fontweight='bold')
-plt.text(mNrmTrg-0.05,-0.1, r"$\check{m}$",fontsize = 26)
-plt.arrow(2.28,1.12,-0.1,0.03,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
-plt.arrow(2.28,0.97,-0.1,0.02,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
-
-make('cRatTargetFig')
-
-
-# %% [markdown]
-# ### [Upper and Lower Limits of the Marginal Propensity to Consume](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#MPCLimits)
+# The paper shows that as $m_{t}~\uparrow~\infty$ the consumption function in the presence of risk gets arbitrarily close to the perfect foresight consumption function.  Defining $\tilde{κ}$
+# as the perfect foresight model's MPC, this implies that $\lim_{m_{t}~\uparrow~\infty} c^{\prime}(m) = \tilde{\kappa}$.
 #
-# The paper shows that as $m_{t}~\uparrow~\infty$ the consumption function in the presence of risk gets arbitrarily close to the perfect foresight consumption function.  Defining \underline{κ}
-# as the perfect foresight model's MPC, this implies that $\lim_{m_{t}~\uparrow~\infty} c^{\prime}(m) = $ \underline{κ}
-# .
-#
-# The paper also derives an analytical limit $\bar{\kappa}$ for the MPC as $m$ approaches 0., its bounding value.  Strict concavity of the consumption function implies that the consumption function will be everywhere below a function $\bar{\kappa}m$, and strictly declining everywhere.  The last figure plots the MPC between these two limits.
+# The paper also derives an analytical limit $\bar{\MPC}$ for the MPC as $m$ approaches 0., its bounding value.  Strict concavity of the consumption function implies that the consumption function will be everywhere below a function $\bar{\MPC}m$, and strictly declining everywhere.  The last figure plots the MPC between these two limits.
 
-# %%
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
 # The last figure shows the upper and lower limits of the MPC
 
-# Retrieve parameters (makes code readable)
-Rfree      = baseAgent_Inf.Rfree
-DiscFac    = baseAgent_Inf.DiscFac
-CRRA       = baseAgent_Inf.CRRA
-EPermGroFac= EPermGroFac
-mNrmTrg    = baseAgent_Inf.solution[0].mNrmSS
-UnempPrb   = baseAgent_Inf.UnempPrb
+mPlotMax = 8
 
-mPlotMax=8    
-
-plt.figure(figsize = (12,8))
+plt.figure(figsize=(12, 8))
 # Set the plot range of m
-m = np.linspace(0.001,mPlotMax,mPts)
+m = np.linspace(0.001, mPlotMax, mPts)
 
 # Use the HARK method derivative to get the derivative of cFunc, and which constitutes the MPC
-MPC = baseAgent_Inf.cFunc[0].derivative(m)
+MPC = soln.cFunc.derivative(m)
 
 # Define the upper bound of MPC
-κ_Max = (1 - UnempPrb ** (1.0/CRRA)*(Rfree*DiscFac)**(1.0/CRRA)/Rfree)
+#mpc_Max = (1 - UnempPrb ** (1.0/CRRA)*(R*DiscFac)**(1.0/CRRA)/R)
 
 # Define the lower bound of MPC
-MPCLower = κ_Min
+#MPCLower = mpc_Min
 
-kappaDef=r'$\underline{\kappa}\equiv(1-\pmb{\text{\TH}}_{R})$'
+kappaDef = r'$\tilde{\kappa}\equiv(1-\pmb{\text{\TH}}_{R})$'
 if not latexExists:
-    kappaDef=r'κ̲$\equiv(1-\Phi_{R})$'
+    kappaDef = r'κ̲$\equiv(1-\Phi_{R})$'
 
-plt.plot(m,MPC,color = 'black')
-plt.plot([mPlotMin,mPlotMax],[κ_Max,κ_Max],color = 'black')
-plt.plot([mPlotMin,mPlotMax],[κ_Min,κ_Min],color = 'black')
-plt.xlim(mPlotMin,mPlotMax)
-plt.ylim(0,1) # MPC bounds are between 0 and 1 
-plt.text(1.5,0.6,r'$\kappa(m) \equiv c^{\prime}(m)$',fontsize = 26,fontweight='bold')
+plt.plot(m, MPC, color='black')
+plt.plot([mPlotMin, mPlotMax], [mpc_Max, mpc_Max], color='black')
+plt.plot([mPlotMin, mPlotMax], [mpc_Min, mpc_Min], color='black')
+plt.xlim(mPlotMin, mPlotMax)
+plt.ylim(0, 1)  # MPC bounds are between 0 and 1
+plt.text(1.5, 0.6, r'$\MPC(m) \equiv c^{\prime}(m)$', fontsize=26, fontweight='bold')
 if latexExists:
-    plt.text(5,0.87,r'$(1-\wp^{1/\rho}\pmb{\text{\TH}})\equiv \overline{\kappa}$',fontsize = 26,fontweight='bold') # Use Thorn character
+    plt.text(5, 0.87, r'$(1-\UnempPrb^{1/\CRRA}\pmb{\text{\TH}})\equiv \overline{\MPC}$',
+             fontsize=26, fontweight='bold')  # Use Thorn character
 else:
-    plt.text(5,0.87,r'$(1-\wp^{1/\rho}\Phi_{R})\equiv \overline{\kappa}$',fontsize = 26,fontweight='bold') # Use Phi instead of Thorn (alas)
+    plt.text(5, 0.87, r'$(1-\UnempPrb^{1/\CRRA}\Phi_{R})\equiv \overline{\MPC}$',
+             fontsize=26, fontweight='bold')  # Use Phi instead of Thorn (alas)
 
-plt.text(0.5,0.07,kappaDef,fontsize = 26,fontweight='bold')
-plt.text(mPlotMax+0.05,mPlotMin,"$m$",fontsize = 26)
-plt.arrow(1.45,0.61,-0.4,mPlotMin,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
-plt.arrow(2.2,0.07,0.2,-0.01,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
-plt.arrow(4.95,0.895,-0.2,0.03,head_width= 0.02,width=0.001,facecolor='black',length_includes_head='True')
+plt.text(0.5, 0.07, kappaDef, fontsize=26, fontweight='bold')
+plt.text(mPlotMax+0.05, mPlotMin, "$m$", fontsize=26)
+plt.arrow(1.45, 0.61, -0.4, mPlotMin, head_width=0.02, width=0.001,
+          facecolor='black', length_includes_head='True')
+plt.arrow(2.2, 0.07, 0.2, -0.01, head_width=0.02, width=0.001,
+          facecolor='black', length_includes_head='True')
+plt.arrow(4.95, 0.895, -0.2, 0.03, head_width=0.02, width=0.001,
+          facecolor='black', length_includes_head='True')
 
-make('MPCLimits')
+makeFig('MPCLimits')
 
 
 # %% [markdown]
 # # Summary
 #
-# [Two tables in the paper](https://llorracc.github.io/BufferStockTheory/#Factors-Defined-And-Compared) summarize the various definitions, and then articulate conditions required for the problem to have a nondegenerate solution.  Among the nondegenerate cases, the most interesting result is that if the Growth Impatience Condition holds there will be a target level of wealth.
+# [Two tables in the paper](https://econ-ark.github.io/BufferStockTheory/#Factors-Defined-And-Compared) summarize the various definitions, and then articulate conditions required for the problem to have a nondegenerate solution.  Among the nondegenerate cases, the most interesting result is that if the Growth Impatience Condition holds there will be a target level of wealth.
 
-# %% [markdown]
+# %% [markdown] {"heading_collapsed": "true", "tags": []}
 # ### Appendix: Options for Interacting With This Notebook <a id='optionsForInstalling'></a>
 #
 # 1. [View (static version)](https://github.com/llorracc/BufferStockTheory/blob/master/Code/Python/BufferStockTheory.ipynb) on GitHub (warning:  GitHub does not render Jupyter notebooks reliably)
@@ -979,39 +1007,43 @@ make('MPCLimits')
 #    1. `cd REMARK/REMARKs/BufferStockTheory`
 #    1. `jupyter notebook BufferStockTheory.ipynb`
 
-# %% [markdown]
+# %% [markdown] {"tags": []}
 # ### Appendix: Perfect foresight agent failing both the FHWC and RIC
 
-# %%
-from copy import copy
-from HARK.ConsumptionSaving.ConsIndShockModel import PerfForesightConsumerType
-fig6_par = copy(base_params)
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
+PFGICRawHoldsFHWCFailsRICFails_par = deepcopy(init_perfect_foresight)
 
 # Replace parameters.
-fig6_par['Rfree'] = 0.98
-fig6_par['DiscFac'] = 1
-fig6_par['PermGroFac'] = [0.99]
-fig6_par['CRRA'] = 2
-fig6_par['BoroCnstArt']  = 0
-fig6_par['T_cycle'] = 0
-fig6_par['cycles'] = 0
-fig6_par['quiet'] = False
+PFGICRawHoldsFHWCFailsRICFails_par['Rfree'] = 0.98
+PFGICRawHoldsFHWCFailsRICFails_par['DiscFac'] = 1.0
+PFGICRawHoldsFHWCFailsRICFails_par['PermGroFac'] = [0.99]
+PFGICRawHoldsFHWCFailsRICFails_par['CRRA'] = 2
+PFGICRawHoldsFHWCFailsRICFails_par['BoroCnstArt'] = 0.0
+PFGICRawHoldsFHWCFailsRICFails_par['T_cycle'] = 1  # No seasonal cycles
+PFGICRawHoldsFHWCFailsRICFails_par['T_retire'] = 0
+PFGICRawHoldsFHWCFailsRICFails_par['cycles'] = 400  # This many periods
+PFGICRawHoldsFHWCFailsRICFails_par['MaxKinks'] = 400
+PFGICRawHoldsFHWCFailsRICFails_par['quiet'] = False
+PFGICRawHoldsFHWCFailsRICFails_par['BoroCnstArt'] = 0.0  # Borrowing constraint
+PFGICRawHoldsFHWCFailsRICFails_par['LivPrb'] = [1.0]
 
 # Create the agent
-RichButPatientAgent = PerfForesightConsumerType(**fig6_par)
-# Check conditions
-RichButPatientAgent.checkConditions(verbose = 3)
-# Solve
-RichButPatientAgent.solve()
+HWRichButReturnPatientPFConstrainedAgent = \
+    PerfForesightConsumerType(**PFGICRawHoldsFHWCFailsRICFails_par,
+                              quietly=True
+                              )
+# Solve and report on conditions
+this_agent = HWRichButReturnPatientPFConstrainedAgent
+this_agent.solve(quietly=False, messaging_level=logging.DEBUG)
 
 # Plot
 mPlotMin, mPlotMax = 1, 9.5
-plt.figure(figsize = (8,4))
-m_grid = np.linspace(mPlotMin,mPlotMax,500)
-plt.plot(m_grid-1, RichButPatientAgent.solution[0].cFunc(m_grid), color="black")
-plt.text(mPlotMax-1+0.05,1,r"$b$",fontsize = 26)
-plt.text(mPlotMin-1,1.017,r"$c$",fontsize = 26)
-plt.xlim(mPlotMin-1,mPlotMax-1)
-plt.ylim(mPlotMin,1.016)
+plt.figure(figsize=(8, 4))
+m_grid = np.linspace(mPlotMin, mPlotMax, 500)
+plt.plot(m_grid-1, this_agent.solution[0].cFunc(m_grid), color="black")
+plt.text(mPlotMax-1+0.05, 1, r"$b$", fontsize=26)
+plt.text(mPlotMin-1, 1.017, r"$c$", fontsize=26)
+plt.xlim(mPlotMin-1, mPlotMax-1)
+plt.ylim(mPlotMin, 1.016)
 
-make('PFGICHoldsFHWCFailsRICFails')
+makeFig('PFGICRawHoldsFHWCFailsRICFails')
