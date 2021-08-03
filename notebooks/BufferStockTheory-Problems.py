@@ -76,7 +76,6 @@ from HARK.ConsumptionSaving.ConsIndShockModel import init_perfect_foresight
 from HARK import __version__ as HARKversion
 from HARK.ConsumptionSaving.ConsIndShockModel \
     import (PerfForesightConsumerType, IndShockConsumerType)
-from scipy.optimize import newton as zero_point_of
 import numpy as np
 from copy import deepcopy
 
@@ -533,15 +532,13 @@ GICNrmFailsButGICRawHolds_params['permShkStd'] = [0.2]
 # Create an agent with these parameters
 GICNrmFailsButGICRawHolds = \
     IndShockConsumerType(**GICNrmFailsButGICRawHolds_params,
-                         quietly=False,  # If true, output would be suppressed
+                         quietly=False,  # If True, output suppressed
                          )
 # %% {"jupyter": {"source_hidden": true}, "tags": []}
 # Solve the model for these parameter values
 GICNrmFailsButGICRawHolds.tolerance = 0.01
 
-GICNrmFailsButGICRawHolds.solve(
-    quietly=True,  # Suppress output
-)
+GICNrmFailsButGICRawHolds.solve(quietly=True)  # Suppress output
 
 # Because we are trying to solve a problem very close to the critical patience
 # values, we want to do it with extra precision to be sure we've gotten the
@@ -598,9 +595,7 @@ GICNrmFailsButGICRawHolds.tolerance = GICNrmFailsButGICRawHolds.tolerance/10
 
 GICNrmFailsButGICRawHolds.solution[0].stge_kind['iter_status'] = 'iterator'
 # continue solving
-
-# continue
-GICNrmFailsButGICRawHolds.solve(messaging_level=logging.NOTSET, quietly=False)
+GICNrmFailsButGICRawHolds.solve(messaging_level=logging.DEBUG, quietly=False)
 
 # Test whether the new solution meets a tighter tolerance than before:
 distance_now = GICNrmFailsButGICRawHolds.solution[0].distance_last
@@ -613,6 +608,7 @@ print('\ndistance_now < distance_original: ' +
 soln = GICNrmFailsButGICRawHolds.solution[0]  # Short alias for solution
 
 Bilt, Pars, E_tp1_ = soln.Bilt, soln.Pars, soln.E_Next_
+cFunc = Bilt.cFunc
 
 fig, ax = plt.subplots(figsize=(12, 8))
 
@@ -633,9 +629,9 @@ cVals_Lmting_color = "black"
 c_Stable_Agg_color = "black"  # "blue"
 c_Stable_Ind_color = "black"  # "red"
 
-cVals_Lmting = Bilt.cFunc(mPltVals)
+cVals_Lmting = cFunc(mPltVals)
 c_Stable_Ind = E_tp1_.c_where_E_Next_m_tp1_minus_m_t_eq_0(mPltVals)
-c_Stable_Agg = E_tp1_.c_where_E_Next_permShk_times_m_tp1_minus_m_t_eq_0(
+c_Stable_Agg = E_tp1_.c_where_E_Next_permGroShk_times_m_tp1_minus_m_t_eq_0(
     mPltVals)
 
 cVals_Lmting_lbl, = ax.plot(mPltVals, cVals_Lmting, color=cVals_Lmting_color)
@@ -643,7 +639,7 @@ c_Stable_Ind_lbl, = ax.plot(mPltVals, c_Stable_Ind,
                             color=c_Stable_Ind_color, linestyle="dashed", label=c_Stable_Ind_txt)
 c_Stable_Agg_lbl, = ax.plot(mPltVals, c_Stable_Agg,
                             color=c_Stable_Agg_color, linestyle="dotted", label=c_Stable_Agg_txt)
-
+fsmid = 22
 ax.set_xlim(xMin, xMax)
 ax.set_ylim(yMin, yMax)
 ax.set_xlabel("$\mathit{m}$", fontweight='bold', fontsize=fsmid, loc="right")
@@ -659,13 +655,8 @@ ax.tick_params(labelbottom=False, labelleft=False, left='off',
 ax.legend(handles=[c_Stable_Ind_lbl, c_Stable_Agg_lbl])
 ax.legend(prop=dict(size=fsmid))
 
-starting_search_at_m_t = 1.0
-mNrmStE = \
-    zero_point_of(E_tp1_.permGroShk_tp1_times_m_tp1_minus_m_t,
-                  starting_search_at_m_t)
-#mNrmStE = soln.mNrmStE
-cNrmStE = c_Stable_Agg = E_tp1_.permGroShk_times_m_tp1_minus_m_t_eq_0(
-    mNrmStE)
+mNrmStE = Bilt.mNrmStE
+cNrmStE = c_Stable_Agg = cFunc(mNrmStE)
 #mNrmStE_lbl, = ax.plot([mNrmStE,mNrmStE],[yMin,yMax],color="green",linestyle="--",label='Pseudo-Steady-State: $\mathbb{E}_{t}[\pmb{m}_{t+1}/\pmb{m}_{t}]=\Gamma$')
 
 ax.plot(mNrmStE, cNrmStE, marker=".", markersize=15, color="black")  # Dot at StE point
