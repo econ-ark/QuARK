@@ -531,7 +531,7 @@ makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 # %% [markdown]
 # `# Create an example consumer instance where the GICNrm fails but the GIC Holds:`
 
-# %% {"jupyter": {"outputs_hidden": true, "source_hidden": true}, "tags": []}
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
 # GICNrmFailsButGICRawHolds Example
 
 base_params['cycles'] = 0  # revert to default of infinite horizon
@@ -548,9 +548,9 @@ GICNrmFailsButGICRawHolds = \
 # %% [markdown]
 # `# Solve that consumer's problem:`
 
-# %% {"jupyter": {"outputs_hidden": true, "source_hidden": true}, "tags": []}
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
 # Solve the model for these parameter values
-GICNrmFailsButGICRawHolds.tolerance = 0.01
+GICNrmFailsButGICRawHolds.tolerance = 0.0001
 
 GICNrmFailsButGICRawHolds.solve(quietly=True)  # Suppress output
 
@@ -692,7 +692,7 @@ print('Finite mNrmStE but infinite mNrmTrg')
 # %% [markdown]
 # `# Construct infinite horizon solution for consumer with baseline parameters:`
 
-# %% {"jupyter": {"outputs_hidden": true, "source_hidden": true}, "tags": []}
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
 # Find the infinite horizon solution
 
 base_params['aXtraCount'] = base_params['aXtraCount'] * 20
@@ -744,7 +744,7 @@ baseAgent_Inf = IndShockConsumerType(
 # %% [markdown]
 # `# Solve problem of consumer with baseline parameters:`
 
-# %% {"jupyter": {"outputs_hidden": true, "source_hidden": true}, "pycharm": {"name": "#%%\n"}, "tags": []}
+# %% {"jupyter": {"source_hidden": true}, "pycharm": {"name": "#%%\n"}, "tags": []}
 # Solve baseline parameters agent
 tweaked_params = deepcopy(base_params)
 tweaked_params['DiscFac'] = 0.970  # Tweak to make figure clearer
@@ -877,7 +877,7 @@ makeFig('cGroTargetFig')
 # %% [markdown] {"tags": []}
 # `# Define bounds for figure:`
 
-# %% {"jupyter": {"outputs_hidden": true, "source_hidden": true}, "tags": []}
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
 # Define mpc_Min, h_inf and PF consumption function, upper and lower bound of c function
 
 baseAgent_Inf = IndShockConsumerType(**base_params, quietly=True)  # construct it silently
@@ -1047,7 +1047,7 @@ makeFig('MPCLimits')
 # %% [markdown] {"tags": []}
 # ### Appendix: Perfect foresight agent failing both the FHWC and RIC
 
-# %% {"jupyter": {"outputs_hidden": true, "source_hidden": true}, "tags": []}
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
 PFGICRawHoldsFHWCFailsRICFails_par = deepcopy(init_perfect_foresight)
 
 # Replace parameters.
