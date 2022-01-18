@@ -12,7 +12,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.11.5
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 #   language_info:
@@ -154,48 +154,46 @@ base_params['BoroCnstArt'] = None    # No artificial borrowing constraint
 #
 # \begin{align}
 #  &
-# \renewcommand{\APF}{\pmb{\unicode[0.55,0.05]{0x00DE}}}
+# \newcommand\maththorn{\mathord{\pmb{\text{\TH}}}}
+# \newcommand{\aLvl}{\mathbf{a}}
+# \newcommand{\aNrm}{{a}}
+# \newcommand{\BalGroRte}{\tilde}
+# \newcommand{\Bal}{\check}
+# \newcommand{\bLvl}{{\mathbf{b}}}
+# \newcommand{\bNrm}{{b}}
+# \newcommand{\cFunc}{\mathrm{c}}
+# \newcommand{\cLvl}{{\mathbf{c}}}
+# \newcommand{\cNrm}{{c}}
+# \newcommand{\CRRA}{\rho}
+# \newcommand{\DiscFac}{\beta}
+# \newcommand{\dLvl}{{\mathbf{d}}}
+# \newcommand{\dNrm}{{d}}
+# \newcommand{\Ex}{\mathbb{E}}
+# \newcommand{\hLvl}{{\mathbf{h}}}
+# \newcommand{\hNrm}{{h}}
+# \newcommand{\IncUnemp}{\mu}
+# \newcommand{\mLvl}{{\mathbf{m}}}
+# \newcommand{\mNrm}{{m}}
+# \newcommand{\MPC}{\kappa}
 # \newcommand{\PatFac}{\pmb{\unicode[0.55,0.05]{0x00DE}}}
 # \newcommand{\PatRte}{\pmb{\unicode[0.55,0.05]{0x00FE}}}
-# \newcommand{\aLvl}{\mathbf{a}}
-# \newcommand{\CRRA}{\rho}
-# \newcommand{\cLvl}{{\mathbf{c}}}
-# \newcommand{\aNrm}{{a}}
-# \newcommand{\bNrm}{{b}}
-# \newcommand{\cNrm}{{c}}
-# \newcommand{\dNrm}{{d}}
-# \newcommand{\hNrm}{{h}}
-# \newcommand{\mNrm}{{m}}
-# \newcommand{\vNrm}{{v}}
-# \newcommand{\aLvl}{{\mathbf{a}}}
-# \newcommand{\bLvl}{{\mathbf{b}}}
-# \newcommand{\cLvl}{{\mathbf{c}}}
-# \newcommand{\dLvl}{{\mathbf{d}}}
-# \newcommand{\hLvl}{{\mathbf{h}}}
-# \newcommand{\mLvl}{{\mathbf{m}}}
-# \newcommand{\pLvl}{{\mathbf{p}}}
-# \newcommand{\vLvl}{{\mathbf{v}}}
-# \newcommand{\cFunc}{\mathrm{c}}
-# \newcommand{\uFunc}{\mathrm{u}}
-# \newcommand{\RNrm}{\mathcal{R}}
-# \newcommand{\DiscFac}{\beta}
-# \newcommand{\Ex}{\mathbb{E}}
-# \newcommand{\IncUnemp}{\mu}
-# \newcommand{\MPC}{\kappa}
-# \newcommand{\PermGroFac}{\pmb{\Phi}}
 # \newcommand{\PermGroFacAdj}{\tilde{\Phi}}
-# \newcommand{\PermShk}{\pmb{\Psi}} % New
+# \newcommand{\PermGroFac}{\pmb{\Phi}}
 # \newcommand{\PermShkStd}{\sigma_{\PermShk}}
+# \newcommand{\PermShk}{\pmb{\Psi}} % New
+# \newcommand{\pLvl}{{\mathbf{p}}}
 # \newcommand{\Rfree}{\mathsf{R}}
-# \newcommand{\Trg}{\hat}
-# \newcommand{\Bal}{\check}
+# \newcommand{\RNrm}{\mathcal{R}}
 # \newcommand{\Thorn}{\pmb{\TH}}
-# \newcommand{\TranShk}{\pmb{\theta}}
 # \newcommand{\TranShkAll}{\pmb{\xi}}
 # \newcommand{\TranShkStd}{\sigma_{\TranShk}}
+# \newcommand{\TranShk}{\pmb{\theta}}
+# \newcommand{\Trg}{\hat}
+# \newcommand{\uFunc}{\mathrm{u}}
 # \newcommand{\UnempPrb}{\wp}
-# \newcommand\maththorn{\mathord{\pmb{\text{\TH}}}}
-# \newcommand{\BalGroRte}{\tilde}
+# \newcommand{\vLvl}{{\mathbf{v}}}
+# \newcommand{\vNrm}{{v}}
+# \renewcommand{\APFac}{\pmb{\unicode[0.55,0.05]{0x00DE}}}
 # \end{align}
 #
 # | Parameter | Description | Python Variable | Value |
@@ -384,13 +382,13 @@ makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 # %% [markdown] {"tags": []}
 # ### [Absolute Patience and the AIC](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#AIC)
 #
-# The paper defines the Absolute Patience Factor [(APF)](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#APF) as being equal to the ratio $\cLvl_{t+1}/\cLvl_{t}$ for a perfect foresight consumer.  (The Old English character [Thorn](https://en.wikipedia.org/wiki/Thorn_(letter)) used for this object in the paper cannot reliably be rendered in Jupyter notebooks; it may appear as capital Phi):
+# The paper defines the Absolute Patience Factor [(APF)](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#APFac) as being equal to the ratio $\cLvl_{t+1}/\cLvl_{t}$ for a perfect foresight consumer.  (The Old English character [Thorn](https://en.wikipedia.org/wiki/Thorn_(letter)) used for this object in the paper cannot reliably be rendered in Jupyter notebooks; it may appear as capital Phi):
 #
 # \begin{equation}
 # \PatFac = (\Rfree \DiscFac)^{1/\CRRA}
 # \end{equation}
 #
-# If $\APF = 1$, a perfect foresight consumer will spend at exactly the level of $\cLvl$ that can be sustained perpetually (given their current and future resources).  If $\APF < 1$ (the consumer is 'absolutely impatient'; or, 'the absolute impatience condition holds'), the consumer is consuming more than the sustainable amount, so consumption will fall, and if the consumer is 'absolutely patient' with $\APF > 1$ consumption will grow over time.
+# If $\APFac = 1$, a perfect foresight consumer will spend at exactly the level of $\cLvl$ that can be sustained perpetually (given their current and future resources).  If $\APFac < 1$ (the consumer is 'absolutely impatient'; or, 'the absolute impatience condition holds'), the consumer is consuming more than the sustainable amount, so consumption will fall, and if the consumer is 'absolutely patient' with $\APFac > 1$ consumption will grow over time.
 #
 #
 
@@ -400,15 +398,15 @@ makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 # For a [perfect foresight consumer](https://www.econ2.jhu.edu/people/ccarroll/public/lecturenotes/consumption/PerfForesightCRRA), whether the ratio $c$=__**c**__/__**p**__ is rising, constant, or falling depends on the relative growth rates of consumption and permanent income; that ratio is measured by the [Perfect Foresight Growth Patience Factor](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#PFGPF):
 #
 # \begin{eqnarray}
-# \APF_{\PermGroFac} & = & \APF/\PermGroFac
+# \APFac_{\PermGroFac} & = & \APFac/\PermGroFac
 # \end{eqnarray}
-# and whether the $c$ is falling or rising over time depends on whether $\APF_{\PermGroFac}$ is below or above 1.
+# and whether the $c$ is falling or rising over time depends on whether $\APFac_{\PermGroFac}$ is below or above 1.
 #
 # An analogous condition can be defined when there is uncertainty about permanent income.  Defining $\tilde{\PermGroFac} = (\Ex[\PermShk^{-1}])^{-1}\PermGroFac$, the
 # ['Growth Impatience Condition'](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GIC) determines whether, _in expectation_, the stochastic value of $c$ is rising, constant, or falling over time:
 #
 # \begin{eqnarray}
-#   \APF/\tilde{\PermGroFac} & < & 1.
+#   \APFac/\tilde{\PermGroFac} & < & 1.
 # \end{eqnarray}
 #
 # ### [The Finite Value of Autarky Condition (FVAC)](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#Autarky-Value)
@@ -429,14 +427,14 @@ makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 # %% [markdown]
 # ### [The Weak Return Impatience Condition (WRIC)](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#WRIC)
 #
-# The [Return Impatience Condition](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#RIC) $\APF/\Rfree < 1$ has long been understood to be required for the perfect foresight model to have a nondegenerate solution (a common special case is when $\CRRA=1$; in this case $\APF = \Rfree \DiscFac$ so $\APF<1$ reduces to the familiar condition $\DiscFac < \Rfree$).
+# The [Return Impatience Condition](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#RIC) $\APFac/\Rfree < 1$ has long been understood to be required for the perfect foresight model to have a nondegenerate solution (a common special case is when $\CRRA=1$; in this case $\APFac = \Rfree \DiscFac$ so $\APFac<1$ reduces to the familiar condition $\DiscFac < \Rfree$).
 #
 # If the RIC does not hold, the consumer is so patient that the optimal consumption function approaches zero as the horizon extends indefinitely.
 #
 # When the probability of unemployment is $\UnempPrb$, the paper articulates an analogous (but weaker) return impatience condition:
 #
 # \begin{eqnarray}
-#  \UnempPrb^{1/\CRRA} \APF/\Rfree & < & 1
+#  \UnempPrb^{1/\CRRA} \APFac/\Rfree & < & 1
 # \end{eqnarray}
 
 # %% [markdown]
@@ -706,7 +704,7 @@ makeFig('GICNrmFailsButGICRawHolds')
 print('Finite mBalLvl but infinite mNrmFacTrgNrm')
 
 # %% [markdown]
-# In the [interactive dashboard](#interactive-dashboard), see what happens as changes in the time preference rate (or changes in risk $\PermShkStd$) change the consumer from _normalized-growth-patient_ $(\APF > \PermGroFac)$ to _normalized-growth-impatient_ ($\APF < \PermGroFac$)
+# In the [interactive dashboard](#interactive-dashboard), see what happens as changes in the time preference rate (or changes in risk $\PermShkStd$) change the consumer from _normalized-growth-patient_ $(\APFac > \PermGroFac)$ to _normalized-growth-impatient_ ($\APFac < \PermGroFac$)
 
 # %% [markdown]
 # As a foundation for the remaining figures, we define another instance of the class $\texttt{IndShockConsumerType}$, which has the same parameter values as the instance $\texttt{baseAgent}$ defined previously but is solved to convergence (our definition of an infinite horizon agent type) instead of only 100 periods
@@ -731,7 +729,7 @@ baseAgent_Inf = IndShockConsumerType(
 # ### [Expected Consumption Growth, and Permanent Income Growth](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#AnalysisoftheConvergedConsumptionFunction)
 #
 # $\renewcommand{\PermShk}{\pmb{\Psi}}$
-# The next figure, [Analysis of the Converged Consumption Function](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#cNrmTargetFig), shows expected growth factors for the levels of consumption $\cLvl$ and market resources $\mLvl$ as a function of the market resources ratio $\mNrm$ for a consumer behaving according to the converged consumption rule, along with the growth factor for $\mNrm$ itself, and the (constant) growth factors for consumption and expected permanent income, $\APF$ and $\PermGroFac$.
+# The next figure, [Analysis of the Converged Consumption Function](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#cNrmTargetFig), shows expected growth factors for the levels of consumption $\cLvl$ and market resources $\mLvl$ as a function of the market resources ratio $\mNrm$ for a consumer behaving according to the converged consumption rule, along with the growth factor for $\mNrm$ itself, and the (constant) growth factors for consumption and expected permanent income, $\APFac$ and $\PermGroFac$.
 #
 # The growth factor for consumption can be computed without knowing the _level_ of the consumer's permanent income:
 #
