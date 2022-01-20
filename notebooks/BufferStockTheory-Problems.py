@@ -477,7 +477,7 @@ makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 #
 # ### [If the GIC-Nrm Holds, $\exists$ a finite 'target' $\mNrm$](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#onetarget)
 #
-# Section [Individual Target Wealth](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#onetarget) shows that, under parameter values for which the limiting consumption function exists, if the [GICNrm](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICNrm) holds then there will be a value $\Trg{m}$ such that:
+# Section [Individual Target Wealth](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#onetarget) shows that, under parameter values for which the limiting consumption function exists, if the [GICMod](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICMod) holds then there will be a value $\Trg{m}$ such that:
 #
 # \begin{eqnarray*}
 # \Ex[m_{t+1}] & > & m_{t}~\text{if $m_{t} < \Trg{m}$} \\
@@ -514,27 +514,27 @@ makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 # which can be solved numerically for the unique $\Bal{\mNrm}$ that satisfies it.
 #
 #
-# ### [Example With Finite Pseudo-Steady-State But Infinite Target Wealth](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICNrmFailsButGICRawHolds)
+# ### [Example With Finite Pseudo-Steady-State But Infinite Target Wealth](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICModFailsButGICRawHolds)
 #
-# [A figure](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICNrmFailsButGICRawHolds) depicts a solution when the **FVAC** [(Finite Value of Autarky Condition)](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#FVAC) and [**WRIC**](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#FVAC) hold (so that the model has a solution), the [**GIC**](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICRaw) holds, so the model has a pseudo-steady-state $\Bal{\mNrm}$, but the [**GIC-Nrm**](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICNrm) fails, so the model does not have an individual target wealth ratio $\Trg{\mNrm}$ (or, rather, the target wealth ratio is infinity, as can be seen by the fact that the level of $\cNrm$ is always below the level that would keep $\Ex_{t}[\Delta \mNrm_{t+1}] = 0$).
+# [A figure](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICModFailsButGICRawHolds) depicts a solution when the **FVAC** [(Finite Value of Autarky Condition)](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#FVAC) and [**WRIC**](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#FVAC) hold (so that the model has a solution), the [**GIC**](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICRaw) holds, so the model has a pseudo-steady-state $\Bal{\mNrm}$, but the [**GIC-Nrm**](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICMod) fails, so the model does not have an individual target wealth ratio $\Trg{\mNrm}$ (or, rather, the target wealth ratio is infinity, as can be seen by the fact that the level of $\cNrm$ is always below the level that would keep $\Ex_{t}[\Delta \mNrm_{t+1}] = 0$).
 #
 # This example was constructed by quadrupling the variance of the permanent shocks from the baseline parameterization.  The extra precautionary saving induced by increased uncertainty is what pushes the agent into the region without a target wealth ratio.
 
 # %% [markdown]
-# `# Create an example consumer instance where the GICNrm fails but the GIC Holds:`
+# `# Create an example consumer instance where the GICMod fails but the GIC Holds:`
 
 # %% {"jupyter": {"source_hidden": true}, "tags": []}
-# GICNrmFailsButGICRawHolds Example
+# GICModFailsButGICRawHolds Example
 
 base_params['cycles'] = 0  # revert to default of infinite horizon
-GICNrmFailsButGICRawHolds_params = dict(base_params)
+GICModFailsButGICRawHolds_params = dict(base_params)
 
 # Increase patience by increasing risk
-GICNrmFailsButGICRawHolds_params['PermShkStd'] = [0.2]
+GICModFailsButGICRawHolds_params['PermShkStd'] = [0.2]
 
 # Create an agent with these parameters
-GICNrmFailsButGICRawHolds = \
-    IndShockConsumerType(**GICNrmFailsButGICRawHolds_params,
+GICModFailsButGICRawHolds = \
+    IndShockConsumerType(**GICModFailsButGICRawHolds_params,
                          quietly=True,messaging_level=logging.CRITICAL  # If True, output suppressed
                          )
 # %% [markdown]
@@ -542,15 +542,15 @@ GICNrmFailsButGICRawHolds = \
 
 # %% {"collapsed": true, "jupyter": {"outputs_hidden": true, "source_hidden": true}, "tags": []}
 # Solve the model for these parameter values
-GICNrmFailsButGICRawHolds.tolerance = 0.0001  # Declare victory at ...
+GICModFailsButGICRawHolds.tolerance = 0.0001  # Declare victory at ...
 # Suppress output during solution
-GICNrmFailsButGICRawHolds.solve(quietly=False,messaging_level=logging.CRITICAL) 
+GICModFailsButGICRawHolds.solve(quietly=False,messaging_level=logging.CRITICAL) 
 
 # Because we are trying to solve a problem very close to the poised patience
 # values, we want to do it with extra precision to be sure we've gotten the
 # answer right.  We can retrieve the distance between the last two solutions:
 
-distance_original = GICNrmFailsButGICRawHolds.solution[0].distance_last
+distance_original = GICModFailsButGICRawHolds.solution[0].distance_last
 
 # But high precision would have slowed things down if we used it from the start
 
@@ -558,15 +558,15 @@ distance_original = GICNrmFailsButGICRawHolds.solution[0].distance_last
 # parameters that will yield a more precise answer:
 
 # Solve with larger than normal range
-GICNrmFailsButGICRawHolds.aXtraMax = GICNrmFailsButGICRawHolds.aXtraMax * 10
+GICModFailsButGICRawHolds.aXtraMax = GICModFailsButGICRawHolds.aXtraMax * 10
 
 # Solve using four times as many gridpoints
-GICNrmFailsButGICRawHolds.aXtraCount = GICNrmFailsButGICRawHolds.aXtraCount * 4
+GICModFailsButGICRawHolds.aXtraCount = GICModFailsButGICRawHolds.aXtraCount * 4
 
-GICNrmFailsButGICRawHolds.update_assets_grid()
+GICModFailsButGICRawHolds.update_assets_grid()
 
 # Solve to a 10 times tighter degree of error tolerance
-GICNrmFailsButGICRawHolds.tolerance = GICNrmFailsButGICRawHolds.tolerance/10
+GICModFailsButGICRawHolds.tolerance = GICModFailsButGICRawHolds.tolerance/10
 
 # When the solver reaches its tolerance threshold, it changes the solver
 # attribute stge_kind to have 'iter_status' of 'finished'
@@ -574,37 +574,37 @@ GICNrmFailsButGICRawHolds.tolerance = GICNrmFailsButGICRawHolds.tolerance/10
 # To continue the solution from where we left off, we just change the
 # 'iter_status' to 'iterator' and tell it to ".solve()" again
 
-GICNrmFailsButGICRawHolds.solution[0].stge_kind['iter_status'] = 'iterator'
+GICModFailsButGICRawHolds.solution[0].stge_kind['iter_status'] = 'iterator'
 # continue solving
 
 # Setting messaging_level to NOTSET prints all info including progress
-GICNrmFailsButGICRawHolds.solve(messaging_level=logging.NOTSET, quietly=False)
+GICModFailsButGICRawHolds.solve(messaging_level=logging.NOTSET, quietly=False)
 
 # Test whether the new solution meets a tighter tolerance than before:
-distance_now = GICNrmFailsButGICRawHolds.solution[0].distance_last
+distance_now = GICModFailsButGICRawHolds.solution[0].distance_last
 print('\ndistance_now < distance_original: ' +
       str(distance_now < distance_original))
 
 # Again increase the range
-GICNrmFailsButGICRawHolds.aXtraMax = GICNrmFailsButGICRawHolds.aXtraMax * 10
+GICModFailsButGICRawHolds.aXtraMax = GICModFailsButGICRawHolds.aXtraMax * 10
 
 # and gridpoints
-GICNrmFailsButGICRawHolds.aXtraCount = GICNrmFailsButGICRawHolds.aXtraCount * 2
+GICModFailsButGICRawHolds.aXtraCount = GICModFailsButGICRawHolds.aXtraCount * 2
 
 # construct grid with the extra gridpoints and expanded range
-GICNrmFailsButGICRawHolds.update_assets_grid()
+GICModFailsButGICRawHolds.update_assets_grid()
 
 # and decrease error tolerance
-GICNrmFailsButGICRawHolds.tolerance = GICNrmFailsButGICRawHolds.tolerance/100
+GICModFailsButGICRawHolds.tolerance = GICModFailsButGICRawHolds.tolerance/100
 
 # mark as not finished but ready to continue iterating
-GICNrmFailsButGICRawHolds.solution[0].stge_kind['iter_status'] = 'iterator'
+GICModFailsButGICRawHolds.solution[0].stge_kind['iter_status'] = 'iterator'
 
 # continue solving
-GICNrmFailsButGICRawHolds.solve(messaging_level=logging.DEBUG, quietly=False)
+GICModFailsButGICRawHolds.solve(messaging_level=logging.DEBUG, quietly=False)
 
 # Test whether the new solution meets a tighter tolerance than before:
-distance_now = GICNrmFailsButGICRawHolds.solution[0].distance_last
+distance_now = GICModFailsButGICRawHolds.solution[0].distance_last
 print('\ndistance_now < distance_original: ' +
       str(distance_now < distance_original))
 
@@ -612,9 +612,9 @@ print('\ndistance_now < distance_original: ' +
 # `# Plot the results:`
 
 # %% {"jupyter": {"source_hidden": true}, "pycharm": {"is_executing": true}, "tags": []}
-# Plot https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICNrmFailsButGICRawHolds
+# Plot https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICModFailsButGICRawHolds
 
-soln = GICNrmFailsButGICRawHolds.solution[0]  # Short alias for solution
+soln = GICModFailsButGICRawHolds.solution[0]  # Short alias for solution
 
 # Get objects that have been Built, parameters configured, and expectations 
 Bilt, Pars, E_tp1_ = soln.Bilt, soln.Pars, soln.E_Next_
@@ -700,7 +700,7 @@ else:
     ax.text(mBalLvl+0.02, cNrmFacBalLvl-0.10, r"$\nwarrow$", fontsize=fsmid)
     ax.text(mBalLvl+0.25, cNrmFacBalLvl-0.18, r"$\check{m}~$", fontsize=fsmid)
 
-makeFig('GICNrmFailsButGICRawHolds')
+makeFig('GICModFailsButGICRawHolds')
 print('Finite mBalLvl but infinite mNrmFacTrgNrm')
 
 # %% [markdown]
