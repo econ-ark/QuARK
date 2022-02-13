@@ -12,7 +12,7 @@
 #       format_version: '1.3'
 #       jupytext_version: 1.11.5
 #   kernelspec:
-#     display_name: Python 3 (ipykernel)
+#     display_name: Python 3
 #     language: python
 #     name: python3
 #   language_info:
@@ -70,8 +70,6 @@
 # `# Setup Python Below`
 
 # %% {"jupyter": {"source_hidden": true}, "tags": []}
-# This cell does some setup
-
 # Import required python packages
 import os.path
 import sys
@@ -100,7 +98,6 @@ if os.path.isdir('binder'):  # Folder defining requirements exists
 # `# Setup HARK Below`
 
 # %% {"jupyter": {"source_hidden": true}, "tags": []}
-# Import required HARK tools
 from HARK import __version__ as HARKversion
 from HARK.utilities import (
     plot_funcs, find_gui, make_figs, determine_platform,
@@ -146,6 +143,8 @@ PermGroFac, PermShkStd, TranShkStd = base_params['PermGroFac'][0], base_params['
 # Some technical settings that are not interesting for our purposes
 base_params['LivPrb'] = [1.0]   # 100 percent chance of living to next period
 base_params['BoroCnstArt'] = None    # No artificial borrowing constraint
+
+
 
 # %% [markdown] {"jp-MarkdownHeadingCollapsed": true, "tags": []}
 # ## [The Problem](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory/BufferStockTheory3.html#The-Problem)
@@ -257,7 +256,7 @@ base_params['BoroCnstArt'] = None    # No artificial borrowing constraint
 # m_{t+1} &=& a_t \Rfree/(\PermGroFac \PermShk_{t+1}) + \TranShkAll_{t+1} \\
 # \end{eqnarray*}
 
-# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# %% {"tags": []}
 # Set the parameters for the baseline results in the paper
 base_params['PermGroFac'] = [1.03]         # Permanent income growth factor
 base_params['Rfree'] = Rfree = 1.04        # Interest factor on assets
@@ -448,7 +447,7 @@ makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 # ## [Natural Borrowing Constraint limits to Artificial Borrowing Constraint](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#The-Liquidity-Constrained-Solution-as-a-Limit)
 
 # %% [markdown]
-# Defining $\chi(\UnempPrb)$ as the consumption function associated with any particular probability of a zero-income shock $\UnempPrb$, and defining $\hat{\chi}$ as the consumption function that would apply in the absence of the transitory zero-income shocks but in the presence of an 'artificial' borrowing constraint requiring $a \geq 0$ (_a la_ Deaton (1991)), the paper shows that
+# Defining $\chi(\UnempPrb)$ as the consumption function associated with any particular probability of a zero-income shock $\UnempPrb,$ and defining $\hat{\chi}$ as the consumption function that would apply in the absence of the transitory zero-income shocks but in the presence of an 'artificial' borrowing constraint requiring $a \geq 0$ (_a la_ Deaton (1991)), the paper shows that
 #
 # \begin{eqnarray}
 # \lim_{\UnempPrb \downarrow 0}~\chi(\UnempPrb) & = & \hat{\chi}
@@ -523,7 +522,7 @@ makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 # %% [markdown]
 # `# Create an example consumer instance where the GICMod fails but the GIC Holds:`
 
-# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# %% {"tags": []}
 # GICModFailsButGICRawHolds Example
 
 base_params['cycles'] = 0  # revert to default of infinite horizon
@@ -540,7 +539,7 @@ GICModFailsButGICRawHolds = \
 # %% [markdown]
 # `# Solve that consumer's problem:`
 
-# %% {"collapsed": true, "jupyter": {"outputs_hidden": true, "source_hidden": true}, "tags": []}
+# %% {"tags": []}
 # Solve the model for these parameter values
 GICModFailsButGICRawHolds.tolerance = 0.0001  # Declare victory at ...
 # Suppress output during solution
@@ -611,7 +610,7 @@ print('\ndistance_now < distance_original: ' +
 # %% [markdown]
 # `# Plot the results:`
 
-# %% {"jupyter": {"source_hidden": true}, "pycharm": {"is_executing": true}, "tags": []}
+# %% {"pycharm": {"is_executing": true}, "tags": []}
 # Plot https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICModFailsButGICRawHolds
 
 soln = GICModFailsButGICRawHolds.solution[0]  # Short alias for solution
@@ -650,8 +649,8 @@ if latexExists:
     c_Unconstrained_txt = r'$\bar{\cFunc}(\mNrm)$'
 else:
     c_Stable_TrgNrm_txt = "$\mathsf{E}_{t}[\Delta m_{t+1}] = 0$"
-    c_Stable_BalLvl_txt = "$\mathsf{E}_{t}[\mathbf{m}_{t+1}/\mathbf{m}_{t}] = \PermGroFac$"
-    c_Stable_BalLog_txt = "$\mathsf{E}_{t}[\log \mathbf{m}_{t+1} - \log \mathbf{m}_{t}] = \log \PermGroFac$"
+    c_Stable_BalLvl_txt = "$\mathsf{E}_{t}[\mathbf{m}_{t+1}/\mathbf{m}_{t}] = \Phi$"
+    c_Stable_BalLog_txt = "$\mathsf{E}_{t}[\log \mathbf{m}_{t+1} - \log \mathbf{m}_{t}] = \log \Phi$"
     c_Unconstrained_txt = r'$\bar{\cFunc}(\mNrm)$'
 
 cVals_Lmting_color = "black"
@@ -786,7 +785,7 @@ baseAgent_Inf = IndShockConsumerType(
 # %% [markdown]
 # `# Solve problem of consumer with baseline parameters:`
 
-# %% {"collapsed": true, "jupyter": {"outputs_hidden": true, "source_hidden": true}, "pycharm": {"is_executing": true, "name": "#%%\n"}, "tags": []}
+# %% {"pycharm": {"is_executing": true, "name": "#%%\n"}, "tags": []}
 # Solve baseline parameters agent
 tweaked_params = deepcopy(base_params)
 tweaked_params['DiscFac'] = 0.970  # Tweak to make figure clearer
@@ -796,10 +795,10 @@ baseAgent_Inf = IndShockConsumerType(
 baseAgent_Inf.solve(
     quietly=False, messaging_level=logging.INFO)  # Solve it with info
 
-# %% [markdown] {"jupyter": {"source_hidden": true}, "tags": []}
+# %% [markdown] {"tags": []}
 # `# Plot growth factors for various model elements at steady state:`
 
-# %% {"jupyter": {"source_hidden": true}, "pycharm": {"is_executing": true}, "tags": []}
+# %% {"pycharm": {"is_executing": true}, "tags": []}
 # Plot growth rates
 
 soln = baseAgent_Inf.solution[0]
@@ -886,11 +885,11 @@ if latexExists:
     cLvlAPFac_lbl = r'$\pmb{\text{\TH}} = (\Rfree\DiscFac)^{1/\CRRA}$'
 else:
     mNrmFacTrg_lbl = r'$\mathsf{E}_{t}[m_{t+1}/m_{t}]:~ \hat{m} \rightarrow~~$'
-    PermGro_lbl = r"$\PermGroFac$"
+    PermGro_lbl = r"$\Phi$"
     cLvlGroFac_lbl = r"$\mathsf{E}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}]$"
     mNrmGroFac_lbl = r"$\mathsf{E}_{t}[m_{t+1}/m_{t}]^{\nearrow}$"
     mLvlGroFac_lbl = r"$\mathsf{E}_{t}[\mathbf{m}_{t+1}/\mathbf{m}_{t}]$"
-    mBalLvl_lbl = r"$m\check_{\searrow}$"    
+    mBalLvl_lbl = r"$\check{m}_{\searrow}$"    
     cLvlAPFac_lbl = Thorn + r'$= (\mathsf{R}\beta)^{1/\rho}$'
 
 
@@ -934,7 +933,7 @@ makeFig('cNrmTargetFig')
 # %% [markdown] {"tags": []}
 # `# Define bounds for figure:`
 
-# %% {"jupyter": {"source_hidden": true}, "pycharm": {"is_executing": true}, "tags": []}
+# %% {"pycharm": {"is_executing": true}, "tags": []}
 # Define mpc_Min, h_inf and PF consumption function, upper and lower bound of c function
 
 # construct and solve it silently
@@ -963,15 +962,18 @@ def cFunc_BotBnd(m): return mpc_Min * m
 # %% [markdown]
 # `# Plot figure showing bounds`
 
-# %% {"jupyter": {"source_hidden": true}, "pycharm": {"is_executing": true}, "tags": []}
+# %% {"pycharm": {"is_executing": true}, "tags": []}
 # Plot the consumption function and its bounds
-
 cMaxLabel = r'$\overline{c}(m)= (m-1+h)\tilde{\kappa}$'
 cMinLabel = r'Lower Bound: $\tilde{c}(m)= (1-\pmb{\text{\TH}}_{\mathsf{R}})\tilde{\kappa}m$'
 if not latexExists:
     cMaxLabel = r'$\bar{c}(m) = (m-1+h)\kappa$'  # Use unicode kludge
     cMinLabel = r'Lower Bound: c̲$(m)= (1-$'+Thorn+r'$_{\mathsf{R}})m = \kappa m$'
+#    cMinLabel = r'Lower Bound: c̲$(m)= (1-$'+   ''+r'$_{\mathsf{R}})m = \kappa m$'
+    cLvlAPFac_lbl = Thorn + r'$= (\mathsf{R}\beta)^{1/\rho}$'
+#    cLvlAPFac_lbl = ' ' + r'$= (\mathsf{R}\beta)^{1/\rho}$'
 
+    
 mPlotMin = 0.0
 mPlotMax = 25
 # mKnk is point where the two upper bounds meet
@@ -999,17 +1001,20 @@ plt.text(mPlotMin, cTopMult*cFunc_Uncnst(mPlotMax)+0.05, "$c$", fontsize=22)
 plt.text(mPlotMax+0.1, mPlotMin, "$m$", fontsize=22)
 plt.text(2.5, 1, r'$c(m)$', fontsize=22, fontweight='bold')
 upper_upper_bound_m = 4.6
+
 if latexExists:
-    plt.text(upper_upper_bound_m+0.6, cFunc_TopBnd(upper_upper_bound_m+0.5), 
-             r'$\leftarrow \overline{\overline{c}}(m)= \overline{\MPC}m = (1-\UnempPrb^{1/\CRRA}\pmb{\text{\TH}}_{\mathsf{R}})m$',
-             fontsize=22, fontweight='bold')
+    upper_upper_bound_m_lbl = r'$\leftarrow \overline{\overline{c}}(m)= \overline{\MPC}m = (1-\UnempPrb^{1/\CRRA}\pmb{\text{\TH}}_{\mathsf{R}})m$'
 else:
-    plt.text(upper_upper_bound_m+0.6, cFunc_TopBnd(upper_upper_bound_m+0.5), 
-             r'$\overline{\overline{c}}(m)= \overline{\kappa}m = (1-\wp^{1/\rho}$'+Thorn+'$_{\mathsf{R}})m$',
+    upper_upper_bound_m_lbl = r'$\overline{\overline{c}}(m)= \overline{\kappa}m = (1-\wp^{1/\rho}$'+Thorn+r'$_{\mathsf{R}})m$'
+#    upper_upper_bound_m_lbl = r'$\overline{\overline{c}}(m)= \overline{\kappa}m = (1-\wp^{1/\rho}$'+   ''+r'$_{\mathsf{R}})m$'
+    
+plt.text(upper_upper_bound_m+0.6, cFunc_TopBnd(upper_upper_bound_m+0.5), 
+             upper_upper_bound_m_lbl,
              fontsize=22, fontweight='bold')
+
 upper_bound_m = 12
-plt.text(
-    upper_bound_m, cFunc_Uncnst(upper_bound_m)-0.3, r'Upper Bound $ = $ Min $[\overline{\overline{c}}(m),\overline{c}(m)]$', fontsize=22, fontweight='bold')
+upper_bound_m_lbl=r'Upper Bound $ = $ Min $[\overline{\overline{c}}(m),\overline{c}(m)]$'
+plt.text(upper_bound_m, cFunc_Uncnst(upper_bound_m)-0.3, upper_bound_m_lbl, fontsize=22, fontweight='bold')
 plt.text(8, 0.9, cMinLabel, fontsize=22, fontweight='bold')
 lower_unc_bound_m = 1.7
 lower_unc_bound_c = cFunc_Uncnst(lower_unc_bound_m)-0.2
@@ -1036,9 +1041,9 @@ makeFig('cFuncBounds')
 # The paper also derives an analytical limit $\bar{\MPC}$ for the MPC as $m$ approaches 0., its bounding value.  Strict concavity of the consumption function implies that the consumption function will be everywhere below a function $\bar{\MPC}m$, and strictly declining everywhere.  The last figure plots the MPC between these two limits.
 
 # %% [markdown]
-# `# Make and plot figure showing the upper and lower limites of the MPC:`
+# `# Make and plot figure showing the upper and lower limits of the MPC:`
 
-# %% {"jupyter": {"source_hidden": true}, "pycharm": {"is_executing": true}, "tags": []}
+# %% {"pycharm": {"is_executing": true}, "tags": []}
 # The last figure shows the upper and lower limits of the MPC
 
 mPlotMin = 0
@@ -1067,7 +1072,7 @@ if latexExists:
              fontsize=26, fontweight='bold')  # Use Thorn character
 else:
     plt.text(1.5, 0.6, r'$\kappa(m) \equiv c^{\prime}(m)$', fontsize=26, fontweight='bold')
-    plt.text(5, 0.87, r'$(1-\wp^{1/\rho}$'+Thorn+'${R})\equiv \bar{\kappa}$',
+    plt.text(5, 0.87, r'$(1-\wp^{1/\rho}$'+Thorn+'$_{R})\equiv \bar{\kappa}$',
              fontsize=26, fontweight='bold')  # Use Phi instead of Thorn (alas)
 
 plt.text(0.5, 0.07, kappaDef, fontsize=26, fontweight='bold')
@@ -1090,8 +1095,8 @@ makeFig('MPCLimits')
 # %% [markdown] {"heading_collapsed": "true", "tags": []}
 # ### Appendix: Options for Interacting With This Notebook <a id='optionsForInstalling'></a>
 #
-# 1. [View (static version)](https://github.com/llorracc/BufferStockTheory/blob/master/Code/Python/BufferStockTheory.ipynb) on GitHub (warning:  GitHub does not render Jupyter notebooks reliably)
-# 1. [Launch Online Interactive Version](https://econ-ark.org/materials/BufferStockTheory/#launch)
+# 1. [View (static version)](https://nbviewer.org/github/econ-ark/BufferStockTheory/blob/master/BufferStockTheory.ipynb)
+# 1. [Launch Online Interactive Version](https://econ-ark.org/materials/bufferstocktheory?launch)
 # 1. For fast (local) execution, install [econ-ark](http://github.com/econ-ark) on your computer ([QUICK START GUIDE](https://github.com/econ-ark/HARK/blob/master/README.md)) then follow these instructions to retrieve the full contents of the `BufferStockTheory` [REMARK](https://github.com/econ-ark/BufferStockTheory):
 #    1. At a command line, change the working directory to the one where you want to install
 #        * On unix, if you install in the `/tmp` directory, the installation will disappear after a reboot:
@@ -1107,7 +1112,7 @@ makeFig('MPCLimits')
 #
 # [Perfect Foresight Liquidity Constrained Solution](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#ApndxLiqConstr)
 
-# %% {"collapsed": true, "jupyter": {"outputs_hidden": true, "source_hidden": true}, "pycharm": {"is_executing": true}, "tags": []}
+# %% {"pycharm": {"is_executing": true}, "tags": []}
 PFGICRawHoldsFHWCFailsRICFails_par = deepcopy(init_perfect_foresight)
 
 # Replace parameters.
