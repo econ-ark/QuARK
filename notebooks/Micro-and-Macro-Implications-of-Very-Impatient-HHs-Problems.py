@@ -1,17 +1,30 @@
 # ---
 # jupyter:
 #   jupytext:
-#     cell_metadata_filter: collapsed,code_folding
+#     cell_metadata_filter: ExecuteTime,-autoscroll,collapsed
+#     cell_metadata_json: true
 #     formats: ipynb,py:percent
+#     notebook_metadata_filter: all,-widgets,-varInspector
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 1.2.1
+#       format_version: '1.3'
+#       jupytext_version: 1.13.4
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
+#   language_info:
+#     codemirror_mode:
+#       name: ipython
+#       version: 3
+#     file_extension: .py
+#     mimetype: text/x-python
+#     name: python
+#     nbconvert_exporter: python
+#     pygments_lexer: ipython3
+#     version: 3.8.8
+#   orig_nbformat: 4
 # ---
 
 # %% [markdown]
