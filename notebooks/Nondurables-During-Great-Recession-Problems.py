@@ -126,8 +126,8 @@ init_infinite = {
     "TranShkCount":5,  # Number of points in transitory income shock grid
     "UnempPrb":0.07,  # Probability of unemployment while working
     "IncUnemp":0.15,  # Unemployment benefit replacement rate
-    "UnempPrbRet":None,
-    "IncUnempRet":None,
+    "UnempPrbRet":0.07,
+    "IncUnempRet":0.15,
     "aXtraMin":0.00001,  # Minimum end-of-period assets in grid
     "aXtraMax":20,  # Maximum end-of-period assets in grid
     "aXtraCount":20,  # Number of points in assets grid,
@@ -345,6 +345,10 @@ plot_funcs([calcConsChangeAfterPermShkChange],perm_min,perm_max,N=num_points)
 #
 # Compute the change in transitory uncertainty and of unemployment risk that would be sufficient to make consumption fall by the appropriate amount (by making a figure similar to the one above). Brifely explain your results in intuitive terms, and discuss the implications for the measurement and interpretation of measures of "uncertainty" in consumer surveys.
 
+# %%
+# PROBLEM: soln here 
+# (rename all-caps problem in line above to all-caps solution)
+
 # %% [markdown]
 # ### PROBLEM
 #
@@ -353,3 +357,7 @@ plot_funcs([calcConsChangeAfterPermShkChange],perm_min,perm_max,N=num_points)
 # Use the toolkit to perform an exercise designed to make a rough calculation of how such stimulus payments might affect the dynamics of aggregate consumption expenditures.  To do this, you will want to use the `ConsPrefShock` model, which allows for a temporary shock to the utility from consumption that can be used to model a one-quarter closing of restaurants and other retail businesses (your marginal utility of spending money on restaurants goes to zero if the restaurants are closed!).  
 #
 # In more detail, you might incorporate a negative marginal utility shock of 10 percent in the quarter when the pandemic recession hits, followed by a full bounceback of marginal utility to its normal state one quarter later.  And, I suggest you incorporate a stimulus payment of about 5 percent of annual income for a typical consumer.  Your task is to show the path of consumer spending leading up to the pandemic quarter (which should be flat, since the pandemic is unanticipated), and then the path during the pandemic quarter and in the several quarters after it.
+
+# %%
+# PROBLEM: soln here 
+# (rename all-caps problem in line above to all-caps solution)
