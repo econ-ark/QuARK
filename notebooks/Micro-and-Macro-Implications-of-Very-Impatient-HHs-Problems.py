@@ -2,14 +2,13 @@
 # jupyter:
 #   jupytext:
 #     cell_metadata_filter: ExecuteTime,-autoscroll,collapsed
-#     cell_metadata_json: true
 #     formats: ipynb,py:percent
 #     notebook_metadata_filter: all,-widgets,-varInspector
 #     text_representation:
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.13.4
+#       jupytext_version: 1.11.5
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -24,18 +23,35 @@
 #     nbconvert_exporter: python
 #     pygments_lexer: ipython3
 #     version: 3.8.8
-#   orig_nbformat: 4
+#   latex_envs:
+#     LaTeX_envs_menu_present: true
+#     autoclose: false
+#     autocomplete: true
+#     bibliofile: biblio.bib
+#     cite_by: apalike
+#     current_citInitial: 1
+#     eqLabelWithNumbers: true
+#     eqNumInitial: 1
+#     hotkeys:
+#       equation: Ctrl-E
+#       itemize: Ctrl-I
+#     labels_anchors: false
+#     latex_user_defs: false
+#     report_style_numbering: false
+#     user_envs_cfg: false
 # ---
 
 # %% [markdown]
 # # Micro- and Macroeconomic Implications of Very Impatient Households
 #
 # <p style="text-align: center;"><small><small><small>Generator: QuARK-make/notebooks_byname</small></small></small></p>
+#
+# [![badge](https://img.shields.io/badge/Launch%20using%20-Econ--ARK-blue)](https://econ-ark.org/materials/micro-and-macro-implications-of-very-impatient-hhs#launch)
 
-# %% [markdown]
+# %% [markdown] tags=[] jp-MarkdownHeadingCollapsed=true
 # ## Introduction
 #
-# Buffer stock saving models of the kind implemented in $\texttt{ConsIndShockType}$ say that, if a standard ['Growth Impatience Condition'](https://econ.jhu.edu/people/ccarroll/papers/BufferStockTheory/#Growth-Modified-Conditions), holds:
+# Buffer stock saving models of the kind implemented in $\texttt{ConsIndShockType}$ say that, if a standard ['Growth Impatience Condition'](https://econ-ark.github.io/BufferStockTheory/#GICRaw), holds:
 #
 # \begin{eqnarray}
 # \newcommand{\Rfree}{\mathsf{R}}\newcommand{\DiscFac}{\beta}\newcommand{\PermGroFac}{\Gamma}\newcommand{\PermShk}{\psi}\newcommand{\CRRA}{\rho}
@@ -46,7 +62,7 @@
 #
 # If everyone had identical preferences and everyone were at their target $\check{a}$, then inequality in the level of $\aLev$ would be exactly the same as inequality in $\pLev$.
 #
-# ["The Distribution of Wealth and the Marginal Propensity to Consume"](http://econ.jhu.edu/people/ccarroll/papers/cstwMPC) (Carroll, Slacalek, Tokuoka, and White 2017; hereafter: "cstwMPC") shows that, when such a model is simulated and agents draw their idiosyncratic shocks (so, agents are _ex post_ heterogeneous -- see the definition in [Intro-To-HARK](http://github.com/econ-ark/PARK/tree/master/Intro-To-HARK.pdf)) -- asset inequality is indeed close to $\pLev$ inequality even though everyone is not always at exactly their target $a$.
+# ["The Distribution of Wealth and the Marginal Propensity to Consume"](https://www.econ2.jhu.edu/people/ccarroll/papers/cstwMPC) (Carroll, Slacalek, Tokuoka, and White 2017; hereafter: "cstwMPC") shows that, when such a model is simulated and agents draw their idiosyncratic shocks (so, agents are _ex post_ heterogeneous -- see the definition in [Intro-To-HARK](http://github.com/econ-ark/PARK/tree/master/Intro-To-HARK.pdf)) -- asset inequality is indeed close to $\pLev$ inequality even though everyone is not always at exactly their target $a$.
 #
 # But a large body of evidence shows that _actual_ inequality in assets is much greater than _actual_ inequality in permanent income.  Thus, to make a model that qualifies as what cstwMPC call a 'serious' microfounded macro model of consumption (one that matches the key facts _theory says_ should be first-order important), the model must be modified to incorporate some form of _ex ante_ heterogeneity: That is, there must be differences across people in $\DiscFac$ or $\Rfree$ or $\CRRA$ or $\PermGroFac$ or $\sigma^{2}_{\PermShk}$.
 #
@@ -65,7 +81,7 @@
 # 1. How does the distribution of the MPC change (relative to cstwMPC's baseline) if some simulated households are extremely impatient?  Do we observe a significant portion of hand-to-mouth households?
 # 2. How does the distribution (and aggregate level) of wealth change if some households are extremely impatient?  Does this distribution of $\beta$ still generate a wealth distribution like the one seen in U.S. data?
 
-# %% {"code_folding": [25]}
+# %% code_folding=[25]
 # This cell does some setup and imports generic tools used to produce the figures
 
 from tqdm import tqdm
@@ -74,14 +90,13 @@ import numpy as np
 from copy import deepcopy
 
 import HARK # Prevents import error from Demos repo
-from HARK.utilities import plotFuncs
+from HARK.utilities import plot_funcs
 
 
 Generator=False # Is this notebook the master or is it generated?
 # Import related generic python packages
 
 # Set how many digits past the decimal point should be printed?
-from time import clock
 mystr   = lambda number : "{:.4f}".format(number)
 decfmt4 = lambda number : "{:.4f}".format(number)
 decfmt3 = lambda number : "{:.3f}".format(number)
@@ -106,7 +121,7 @@ def in_ipynb():
 # Determine whether to make the figures inline (for spyder or jupyter)
 # vs whatever is the automatic setting that will apply if run from the terminal
 if in_ipynb():
-    # %matplotlib inline generates a syntax error when run from the shell
+    # # %matplotlib inline generates a syntax error when run from the shell
     # so do this instead
     get_ipython().run_line_magic('matplotlib', 'inline')
 else:
@@ -127,7 +142,7 @@ iflatexExists=False
 if find_executable('latex'):
     iflatexExists=True
     
-plt.rc('text', usetex= iflatexExists)
+plt.rc('text', usetex=iflatexExists)
 
 # The warnings package allows us to ignore some harmless but alarming warning messages
 import warnings
@@ -158,7 +173,7 @@ from copy import copy, deepcopy
 #
 # To reproduce their basic results, we must import an $\texttt{AgentType}$ subclass and define a dictionary with calibrated parameters identical to those in the paper.
 
-# %% {"code_folding": [0, 4]}
+# %% code_folding=[0, 4]
 # Import IndShockConsumerType
 from HARK.ConsumptionSaving.ConsIndShockModel import IndShockConsumerType
 
@@ -177,8 +192,8 @@ cstwMPC_calibrated_parameters = {
     "TranShkCount":5,  # Number of points in transitory income shock grid
     "UnempPrb":0.07,  # Probability of unemployment while working
     "IncUnemp":0.15,  # Unemployment benefit replacement rate
-    "UnempPrbRet":None,
-    "IncUnempRet":None,
+    "UnempPrbRet":0.07,
+    "IncUnempRet":0.15,
     "aXtraMin":0.00001,  # Minimum end-of-period assets in grid
     "aXtraMax":40,  # Maximum end-of-period assets in grid
     "aXtraCount":32,  # Number of points in assets grid
@@ -196,7 +211,7 @@ cstwMPC_calibrated_parameters = {
     'aNrmInitStd':0.0,
     'pLvlInitMean':0.0,
     'pLvlInitStd':0.0,
-    'AgentCount':10000,
+    'AgentCount':10000
 }
 
 # %% [markdown]
@@ -206,14 +221,14 @@ cstwMPC_calibrated_parameters = {
 
 # %%
 # This cell constructs seven instances of IndShockConsumerType with different discount factors
-from HARK.utilities import approxUniform
+from HARK.distribution import Uniform
 BaselineType = IndShockConsumerType(**cstwMPC_calibrated_parameters)
 
 # Specify the distribution of the discount factor
 num_types = 7              # number of types we want
 DiscFac_mean   = 0.9855583 # center of beta distribution 
 DiscFac_spread = 0.0085    # spread of beta distribution
-DiscFac_dstn = approxUniform(num_types, DiscFac_mean-DiscFac_spread, DiscFac_mean+DiscFac_spread)[1]
+DiscFac_dstn = Uniform(DiscFac_mean-DiscFac_spread, DiscFac_mean+DiscFac_spread).approx(num_types).X
 
 MyTypes = [] # initialize an empty list to hold our consumer types
 for nn in range(num_types):
@@ -228,13 +243,13 @@ for nn in range(num_types):
 #
 # Now let's solve and simulate each of our types of agents.  If you look in the parameter dictionary (or at any of the agent objects themselves), you will see that each one has an $\texttt{AgentCount}$ attribute of 10000. That is, these seven ex ante heterogeneous types each represent ten thousand individual agents that will experience ex post heterogeneity when they draw different income (and mortality) shocks over time.
 #
-# In the code block below, fill in the contents of the loop to solve and simulate each agent type for many periods.  To do this, you should invoke the methods $\texttt{solve}$, $\texttt{initializeSim}$, and $\texttt{simulate}$ in that order.  Simulating for 1200 quarters (300 years) will approximate the long run distribution of wealth in the population. 
+# In the code block below, fill in the contents of the loop to solve and simulate each agent type for many periods.  To do this, you should invoke the methods $\texttt{solve}$, $\texttt{initialize_sim}$, and $\texttt{simulate}$ in that order.  Simulating for 1200 quarters (300 years) will approximate the long run distribution of wealth in the population. 
 
 # %%
 # Progress bar keeps track interactively of how many have been made
 for ThisType in tqdm(MyTypes):
     ThisType.solve()
-    ThisType.initializeSim()
+    ThisType.initialize_sim()
     ThisType.simulate()
 
 # %% [markdown]
@@ -243,7 +258,7 @@ for ThisType in tqdm(MyTypes):
 # NB: Because there is no permanent income growth in this model, all shocks are mean one and idiosyncratic, and we have many agents, aggregate or average income is 1.0. 
 
 # %%
-aLvl_all = np.concatenate([ThisType.aLvlNow for ThisType in MyTypes])
+aLvl_all = np.concatenate([ThisType.state_now["aLvl"] for ThisType in MyTypes])
 print('The ratio of aggregate capital to permanent income is ' + decfmt2(np.mean(aLvl_all)))
 
 # %% [markdown]
@@ -251,18 +266,21 @@ print('The ratio of aggregate capital to permanent income is ' + decfmt2(np.mean
 
 # %%
 # Plot Lorenz curves for model with uniform distribution of time preference
-from HARK.cstwMPC.SetupParamsCSTW import SCF_wealth, SCF_weights
-from HARK.utilities import getLorenzShares, getPercentiles
+from HARK.datasets import load_SCF_wealth_weights
+from HARK.utilities import get_lorenz_shares, get_percentiles
+
+SCF_wealth, SCF_weights = load_SCF_wealth_weights()
 
 pctiles = np.linspace(0.001,0.999,200)
-sim_wealth = np.concatenate([ThisType.aLvlNow for ThisType in MyTypes])
-SCF_Lorenz_points = getLorenzShares(SCF_wealth,weights=SCF_weights,percentiles=pctiles)
-sim_Lorenz_points = getLorenzShares(sim_wealth,percentiles=pctiles)
+sim_wealth = np.concatenate([ThisType.state_now["aLvl"] for ThisType in MyTypes])
+SCF_Lorenz_points = get_lorenz_shares(SCF_wealth,weights=SCF_weights,percentiles=pctiles)
+sim_Lorenz_points = get_lorenz_shares(sim_wealth,percentiles=pctiles)
 plt.plot(pctiles,SCF_Lorenz_points,'--k')
 plt.plot(pctiles,sim_Lorenz_points,'-b')
 plt.xlabel('Percentile of net worth')
 plt.ylabel('Cumulative share of wealth')
 plt.show(block=False)
+
 
 # %% [markdown]
 # ## Calculating the Lorenz Distance at Targets
@@ -271,14 +289,66 @@ plt.show(block=False)
 
 # %% [markdown]
 # ### PROBLEM - Create a Function to Calculate Lorenz Distance
-# Now let's write a function that calculates the Euclidean distance between simulated and actual Lorenz curves at the four percentiles of interest: 20, 40, 60, and 80.  Fill in the skeleton of the function below, and then test your function using the input $\texttt{MyTypes}$.  If you did it correctly, the Lorenz distance should be 0.03.
 #
-# You may find it useful to check out some documentation for $\texttt{HARK.utilities}$ [at this link](https://econ-ark.github.io/HARK/generated/HARKutilities.html).
+# Now you should write a function `calcLorenzDistance(SomeTypes)` that calculates the  distance (the square root of the sum of the squared distances) between simulated and actual Lorenz curves at the four percentiles of interest: 20, 40, 60, and 80.  
+#
+# \begin{align}
+# d = \left((1/4)\sum_{i=0}^{3} (\text{SCF}_{i} - \text{sim}_{i})^{2}\right)^{1/2}
+# \end{align}
+#
+# where $\text{SCF}_{0}$, for example, is the fraction of wealth the SCF measures as being held by people in the bottom 20 percent of the wealth distribution.
+#
+# The function will just systematize what we did by hand to calculate `sim_Lorenz_points` in the prior cell.  Fill in the skeleton of the function below, and then test your function using the input $\texttt{MyTypes}$.  If you did it correctly, the Lorenz distance should be about 0.015.
+#
+# Hint 0: You may find it useful to check out some documentation for $\texttt{HARK.utilities}$ [at this link](https://hark.readthedocs.io/en/latest/reference/tools/utilities.html?highlight=utilities#module-HARK.utilities).
+#
+# Hint 1: You will probably find it useful to use the following tools from the `numpy` library (imported above via `import numpy as np`): `np.array`, `np.concatenate`, `np.sum`, `np.sqrt`.  The first two of these are used above; the use of the latter two should become apparent as you work your way through the exercise.
+
+# %% code_folding=[]
+### PROBLEM:
+
+# Finish filling in this function to calculate the Euclidean distance 
+# between the simulated and actual Lorenz curves.
+def calcLorenzDistance(SomeTypes):
+    '''
+    Calculates the Euclidean distance between the simulated and actual (from SCF data) Lorenz curves at the
+    20th, 40th, 60th, and 80th percentiles.
+    
+    Parameters
+    ----------
+    SomeTypes : [AgentType]
+        List of AgentTypes that have been solved and simulated.  Current levels of individual assets should
+        be stored in the attribute aLvl.
+        
+    Returns
+    -------
+    lorenz_distance : float
+        Euclidean distance (square root of sum of squared differences) between simulated and actual Lorenz curves.
+    '''
+    # Define empirical Lorenz curve points
+    lorenz_SCF = np.array([-0.00183091,  0.0104425 ,  0.0552605 ,  0.1751907 ])
+    
+    # Extract asset holdings from all consumer types
+    # Hints:
+    #   you will want to use numpy's concatenate command, as above
+    
+    # Calculate simulated Lorenz curve points (as above)
+    
+    # Calculate the Euclidean distance between the simulated and actual Lorenz curves
+    # Hint: you will want to use numpy's sqrt and sum commands: np.sqrt and np.sum
+    
+    # Return the Lorenz distance (uncomment the following line)
+    # return lorenz_distance
+
+# Test your function:
+# (uncomment line below)
+#print('The baseline Lorenz distance is ' + decfmt4(calcLorenzDistance(MyTypes)))
+
 
 # %% [markdown]
 # ## The Distribution Of the Marginal Propensity to Consume
 #
-# For many macroeconomic purposes, the distribution of the MPC $\kappa$ is more important than the distribution of wealth.  Ours is a quarterly model, and MPC's are typically reported on an annual basis; we can compute an approximate MPC from the quraterly ones as $\kappa_{Y} \approx 1.0 - (1.0 - \kappa_{Q})^4$
+# For many macroeconomic purposes, the distribution of the MPC $\kappa$ is more important than the distribution of wealth.  Ours is a quarterly model, and MPC's are typically reported on an annual basis; we can compute a (very) approximate annual MPC from the quraterly ones as $\kappa_{Y} \approx 1.0 - (1.0 - \kappa_{Q})^4$
 #
 # In the cell below, we retrieve the MPCs from our simulated consumers and show that the 10th percentile in the MPC distribution is only about 6 percent, while at the 90th percentile it is almost 0.5
 
@@ -286,12 +356,13 @@ plt.show(block=False)
 # Retrieve the MPC's
 percentiles=np.linspace(0.1,0.9,9)
 MPC_sim = np.concatenate([ThisType.MPCnow for ThisType in MyTypes])
-MPCpercentiles_quarterly = getPercentiles(MPC_sim,percentiles=percentiles)
+MPCpercentiles_quarterly = get_percentiles(MPC_sim,percentiles=percentiles)
 MPCpercentiles_annual = 1.0 - (1.0 - MPCpercentiles_quarterly)**4
 
 print('The MPC at the 10th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[0])))
 print('The MPC at the 50th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[4])))
 print('The MPC at the 90th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[-1])))
+
 
 # %% [markdown]
 # ### PROBLEM
@@ -303,6 +374,14 @@ print('The MPC at the 90th percentile of the distribution is '+str(decfmt2(MPCpe
 # Your function should take two inputs: a list of types of consumers and an array of percentiles (numbers between 0 and 1). It should return no outputs, merely print to screen one line of text for each requested percentile.  The model is calibrated at a quarterly frequency, but Carroll et al report MPCs at an annual frequency. To convert, use the formula:
 #
 # $\kappa_{Y} \approx 1.0 - (1.0 - \kappa_{Q})^4$
+
+# %%
+# PROBLEM: soln here 
+# (rename all-caps PROBLEM in line above to all-caps solution)
+def describeMPCdstn(SomeTypes,percentiles):
+    # Body of function here
+    return
+
 
 # %% [markdown]
 # ## Adding Very Impatient Households
@@ -322,20 +401,20 @@ print('The MPC at the 90th percentile of the distribution is '+str(decfmt2(MPCpe
 NewTypes = deepcopy(MyTypes)
 NewTypes[0].DiscFac = 0.8
 NewTypes[0].solve()
-NewTypes[0].initializeSim()
+NewTypes[0].initialize_sim()
 NewTypes[0].simulate()
 
 # Retrieve the MPC's
 percentiles=np.linspace(0.1,0.9,9)
 MPC_sim = np.concatenate([ThisType.MPCnow for ThisType in NewTypes])
-MPCpercentiles_quarterly = getPercentiles(MPC_sim,percentiles=percentiles)
+MPCpercentiles_quarterly = get_percentiles(MPC_sim,percentiles=percentiles)
 MPCpercentiles_annual = 1.0 - (1.0 - MPCpercentiles_quarterly)**4
 
 print('The MPC at the 10th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[0])))
 print('The MPC at the 50th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[4])))
 print('The MPC at the 90th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[-1])))
 
-# %% [markdown]
+# %% [markdown] jp-MarkdownHeadingCollapsed=true tags=[]
 # ### PROBLEM
 # ## Testing the Implications of Very Impatient Households
 #
@@ -349,7 +428,15 @@ print('The MPC at the 90th percentile of the distribution is '+str(decfmt2(MPCpe
 #
 # Use the markdown block below the code block to briefly answer those questions.
 
+# %%
+# PROBLEM: soln here 
+# (rename all-caps problem in line above to all-caps solution)
+
 # %% [markdown]
 # ### PROBLEM -- Plot the new distribution of wealth
 #
 # The $\texttt{matplotlib}$ library provides plotting functionality that replicates Matlab's plot features (more or less). As an example of how to use it, we have written a few lines of code that plot the empirical vs simulated Lorenz curves.  Write some code that plots the CDF of the MPC before and after adding very impatient households, and plots the DIFFERENCES between the Lorenz curves across the two populations.  Interpret the two graphs.
+
+# %%
+# PROBLEM: soln here 
+# (rename all-caps problem in line above to all-caps solution)
