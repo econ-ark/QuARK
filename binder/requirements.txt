@@ -1,7 +1,11 @@
-matplotlib==2.1.2
-numpy==1.14.0
-ipywidgets==7.2.1
-scipy==1.0.0
-jupyter
+matplotlib
+numpy
+ipywidgets
+scipy
 cite2c
-econ-ark
+pandas
+pandas-datareader
+statsmodels
+tqdm
+nbval
+git+https://github.com/econ-ark/hark@master

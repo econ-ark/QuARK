@@ -247,13 +247,12 @@ for nn in range(num_types):
 # In the code block below, fill in the contents of the loop to solve and simulate each agent type for many periods.  To do this, you should invoke the methods $\texttt{solve}$, $\texttt{initialize_sim}$, and $\texttt{simulate}$ in that order.  Simulating for 1200 quarters (300 years) will approximate the long run distribution of wealth in the population. 
 
 # %%
-
-# %%
 # Progress bar keeps track interactively of how many have been made
+
 for ThisType in tqdm(MyTypes):
-    Test = deepcopy(ThisType.solve())
-    ThisType.initialize_sim(Test)
-    ThisType.simulate(1200)
+    ThisType.solve(verbose = False)
+    ThisType.initialize_sim()
+    ThisType.simulate()
 
 # %% [markdown]
 # To verify that you wrote that code correctly, let's check that the aggregate level of capital (total assets held by all households) to income ratio equals what we expected it would be.  To do that, let's combine the asset holdings of all types, take the mean, and see if we get the desired capital to income ratio of 10.26.
@@ -334,19 +333,25 @@ def calcLorenzDistance(SomeTypes):
     # Extract asset holdings from all consumer types
     # Hints:
     #   you will want to use numpy's concatenate command, as above
+    sim_wealth = np.concatenate([ThisType.state_now["aLvl"] for ThisType in SomeTypes])
     
     # Calculate simulated Lorenz curve points (as above)
+    pctiles = np.linspace(0.2,0.8,4)
+    sim_Lorenz_points = get_lorenz_shares(sim_wealth,percentiles=pctiles)
     
     # Calculate the Euclidean distance between the simulated and actual Lorenz curves
     # Hint: you will want to use numpy's sqrt and sum commands: np.sqrt and np.sum
+    Diff = lorenz_SCF - sim_Lorenz_points
+    Diff2 = Diff**2
+    Sum = (1/4)*np.sum(Diff2)
+    lorenz_distance = np.sqrt(Sum)
     
     # Return the Lorenz distance (uncomment the following line)
-    # return lorenz_distance
+    return lorenz_distance
 
 # Test your function:
 # (uncomment line below)
-#print('The baseline Lorenz distance is ' + decfmt4(calcLorenzDistance(MyTypes)))
-
+print('The baseline Lorenz distance is ' + decfmt4(calcLorenzDistance(MyTypes)))
 
 # %% [markdown]
 # ## The Distribution Of the Marginal Propensity to Consume
@@ -382,9 +387,18 @@ print('The MPC at the 90th percentile of the distribution is '+str(decfmt2(MPCpe
 # PROBLEM: soln here 
 # (rename all-caps PROBLEM in line above to all-caps solution)
 def describeMPCdstn(SomeTypes,percentiles):
-    # Body of function here
-    return
+    MPC_sim = np.concatenate([ThisType.MPCnow for ThisType in SomeTypes])
+    MPCpercentiles_quarterly = get_percentiles(MPC_sim,percentiles=percentiles)
+    MPCpercentiles_annual = 1.0 - (1.0 - MPCpercentiles_quarterly)**4
+    return 'The MPC at the 35th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[5]))
 
+
+# %%
+#Testing my function:
+#First we have to generate a finer array of percentiles:
+percentiles=np.linspace(0.1,0.9,18)
+
+print(describeMPCdstn(MyTypes, percentiles))
 
 # %% [markdown]
 # ## Adding Very Impatient Households
@@ -432,8 +446,53 @@ print('The MPC at the 90th percentile of the distribution is '+str(decfmt2(MPCpe
 # Use the markdown block below the code block to briefly answer those questions.
 
 # %%
-# PROBLEM: soln here 
-# (rename all-caps problem in line above to all-caps solution)
+# SOLUTION:
+N = 900                                 #Number of steps in the percentile range
+percentiles=np.linspace(0.1,0.9,N)
+MPC_sim = np.concatenate([ThisType.MPCnow for ThisType in NewTypes])
+MPCpercentiles_quarterly = get_percentiles(MPC_sim,percentiles=percentiles)
+MPCpercentiles_annual = 1.0 - (1.0 - MPCpercentiles_quarterly)**4
+
+for i in range(N):
+    if (MPCpercentiles_annual[i] < 0.7):
+        continue
+    #print('The MPC at the '+str((80/N)*i + 10)+'th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[i])))
+    else:
+        print('The MPC at the '+str((80/N)*i+10)+'th percentile of the distribution is '+str(decfmt2(MPCpercentiles_annual[i]))+ ' which is greater or equal to 0.7')
+        break
+
+
+# %%
+aLvl_all = np.concatenate([ThisType.state_now["aLvl"] for ThisType in NewTypes])
+print('The ratio of aggregate capital to permanent income is ' + decfmt2(np.mean(aLvl_all)))
+
+# %%
+# Plot Lorenz curves for model with uniform distribution of time preference
+from HARK.datasets import load_SCF_wealth_weights
+from HARK.utilities import get_lorenz_shares, get_percentiles
+
+SCF_wealth, SCF_weights = load_SCF_wealth_weights()
+
+pctiles = np.linspace(0.001,0.999,200)
+sim_wealth = np.concatenate([ThisType.state_now["aLvl"] for ThisType in NewTypes])
+SCF_Lorenz_points = get_lorenz_shares(SCF_wealth,weights=SCF_weights,percentiles=pctiles)
+sim_Lorenz_points = get_lorenz_shares(sim_wealth,percentiles=pctiles)
+plt.plot(pctiles,SCF_Lorenz_points,'--k')
+plt.plot(pctiles,sim_Lorenz_points,'-b')
+plt.xlabel('Percentile of net worth')
+plt.ylabel('Cumulative share of wealth')
+plt.show(block=False)
+
+# %% [markdown]
+# #### 1.Question:
+# Yes the introduction of highly impatient consumers created a substantial amount of hand-to-mouth consumers (about 17%).
+#
+# #### 2.Question:
+# No, neither the aggregate level of wealth to income nor its distribution have changed dramatically. Therefore the introduciton of highly impatient consumers is reconcilable with the empirical data on the distribution of wealth.
+#
+# #### 3.Question:
+# No, so far the model is reconcilable with the existance of highly impatient consumers, who act like hand-to-mouth types.
+#
 
 # %% [markdown]
 # ### PROBLEM -- Plot the new distribution of wealth
@@ -441,5 +500,46 @@ print('The MPC at the 90th percentile of the distribution is '+str(decfmt2(MPCpe
 # The $\texttt{matplotlib}$ library provides plotting functionality that replicates Matlab's plot features (more or less). As an example of how to use it, we have written a few lines of code that plot the empirical vs simulated Lorenz curves.  Write some code that plots the CDF of the MPC before and after adding very impatient households, and plots the DIFFERENCES between the Lorenz curves across the two populations.  Interpret the two graphs.
 
 # %%
-# PROBLEM: soln here 
-# (rename all-caps problem in line above to all-caps solution)
+# SOLUTION:
+N= 100
+percentiles = np.linspace(0.001,0.999,N)
+
+#Calculating the percentiles again:
+MPC_sim = np.concatenate([ThisType.MPCnow for ThisType in NewTypes])
+MPCpercentiles_quarterly = get_percentiles(MPC_sim,percentiles=percentiles)
+MPCpercentiles_annualHigh = 1.0 - (1.0 - MPCpercentiles_quarterly)**4
+                    
+                    
+MPC_sim = np.concatenate([ThisType.MPCnow for ThisType in MyTypes])
+MPCpercentiles_quarterly = get_percentiles(MPC_sim,percentiles=percentiles)
+MPCpercentiles_annual = 1.0 - (1.0 - MPCpercentiles_quarterly)**4
+
+
+plt.plot(MPCpercentiles_annualHigh, percentiles, '-b')
+plt.plot(MPCpercentiles_annual ,percentiles, '-k')
+plt.xlabel('Percentile of MPC')
+plt.ylabel('Cumulative share of Consumers with MPC')
+plt.show(block=False)
+
+
+sim_wealth = np.concatenate([ThisType.state_now["aLvl"] for ThisType in MyTypes])
+sim_Lorenz_points = get_lorenz_shares(sim_wealth,percentiles = percentiles)
+
+sim_wealth_High = np.concatenate([ThisType.state_now["aLvl"] for ThisType in NewTypes])
+sim_Lorenz_points_High = get_lorenz_shares(sim_wealth_High,percentiles = percentiles)
+
+LorenzDiff = sim_Lorenz_points - sim_Lorenz_points_High
+
+plt.plot(percentiles, LorenzDiff,'-b')
+
+plt.xlabel('Percentile of net worth')
+plt.ylabel('Cumulative share of wealth')
+plt.show(block=False)
+
+
+# %% [markdown]
+# The first graph shows that we indeed only change the higher end of the MPC distribution. The second shows that this introduction only had a mild effect on the fit of the Lorenz curve, i.e. the difference to the first simulation of the Lorenc curve is small.
+#
+# Thus, we achieved an alternative population of consumers in which a much higher percentage can be classified as hand-to-mouth, and yet the fit of the lorentz curve is still very good. This bolsters our conclusion above that the model and the empirical evidence is reconcilable with the existence of highly impatient consumers who act like hand-to-mouth types.
+
+# %%
