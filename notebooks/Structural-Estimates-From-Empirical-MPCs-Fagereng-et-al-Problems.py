@@ -1,21 +1,35 @@
 # ---
 # jupyter:
 #   jupytext:
-#     cell_metadata_filter: collapsed,code_folding
+#     cell_metadata_filter: ExecuteTime,-autoscroll,collapsed
+#     cell_metadata_json: true
 #     formats: ipynb,py:percent
+#     notebook_metadata_filter: all,-widgets,-varInspector
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 1.2.1
+#       format_version: '1.3'
+#       jupytext_version: 1.11.5
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
+#   language_info:
+#     codemirror_mode:
+#       name: ipython
+#       version: 3
+#     file_extension: .py
+#     mimetype: text/x-python
+#     name: python
+#     nbconvert_exporter: python
+#     pygments_lexer: ipython3
+#     version: 3.8.8
 # ---
 
 # %% [markdown]
 # # Making Structural Estimates From Empirical Results
+#
+# [![badge](https://img.shields.io/badge/Launch%20using%20-Econ--ARK-blue)](https://econ-ark.org/materials/structural-estimates-from-empirical-mpcs-fagereng-et-al#launch)
 #
 # This notebook conducts a quick and dirty structural estimation based on Table 9 of "MPC Heterogeneity and Household Balance Sheets" by Fagereng, Holm, and Natvik <cite data-cite="6202365/SUE56C4B"></cite>, who use Norweigian administrative data on income, household assets, and lottery winnings to examine the MPC from transitory income shocks (lottery prizes).  Their Table 9 reports an estimated MPC broken down by quartiles of bank deposits and
 # prize size; this table is reproduced here as $\texttt{MPC_target_base}$.  In this demo, we use the Table 9 estimates as targets in a simple structural estimation, seeking to minimize the sum of squared differences between simulated and estimated MPCs by changing the (uniform) distribution of discount factors.  The essential question is how well their results be rationalized by a simple one-asset consumption-saving model.  
@@ -42,14 +56,50 @@ from copy import deepcopy
 # %% {"code_folding": []}
 # Import needed tools from HARK
 
-from HARK.distribution import approxUniform
-from HARK.utilities import getPercentiles
-from HARK.parallel import multiThreadCommands
-from HARK.estimation import minimizeNelderMead
+from HARK.distribution import Uniform
+from HARK.utilities import get_percentiles
+from HARK.parallel import multi_thread_commands
+from HARK.estimation import minimize_nelder_mead
 from HARK.ConsumptionSaving.ConsIndShockModel import *
-from HARK.cstwMPC.SetupParamsCSTW import init_infinite
 
-# %% {"code_folding": [0]}
+
+init_infinite = {
+    "CRRA":1.0,                    # Coefficient of relative risk aversion 
+    "Rfree":1.01/(1.0 - 1.0/160.0), # Survival probability,
+    "PermGroFac":[1.000**0.25], # Permanent income growth factor (no perm growth),
+    "PermGroFacAgg":1.0,
+    "BoroCnstArt":0.0,
+    "CubicBool":False,
+    "vFuncBool":False,
+    "PermShkStd":[(0.01*4/11)**0.5],  # Standard deviation of permanent shocks to income
+    "PermShkCount":5,  # Number of points in permanent income shock grid
+    "TranShkStd":[(0.01*4)**0.5],  # Standard deviation of transitory shocks to income,
+    "TranShkCount":5,  # Number of points in transitory income shock grid
+    "UnempPrb":0.07,  # Probability of unemployment while working
+    "IncUnemp":0.15,  # Unemployment benefit replacement rate
+    "UnempPrbRet":None,
+    "IncUnempRet":None,
+    "aXtraMin":0.00001,  # Minimum end-of-period assets in grid
+    "aXtraMax":40,  # Maximum end-of-period assets in grid
+    "aXtraCount":32,  # Number of points in assets grid
+    "aXtraExtra":[None],
+    "aXtraNestFac":3,  # Number of times to 'exponentially nest' when constructing assets grid
+    "LivPrb":[1.0 - 1.0/160.0],  # Survival probability
+    "DiscFac":0.97,             # Default intertemporal discount factor; dummy value, will be overwritten
+    "cycles":0,
+    "T_cycle":1,
+    "T_retire":0,
+    'T_sim':1200,  # Number of periods to simulate (idiosyncratic shocks model, perpetual youth)
+    'T_age': 400,
+    'IndL': 10.0/9.0,  # Labor supply per individual (constant),
+    'aNrmInitMean':np.log(0.00001),
+    'aNrmInitStd':0.0,
+    'pLvlInitMean':0.0,
+    'pLvlInitStd':0.0,
+    'AgentCount':10000,
+}
+
+# %% {"code_folding": []}
 # Set key problem-specific parameters
 
 TypeCount = 8    # Number of consumer types with heterogeneous discount factors
@@ -93,7 +143,7 @@ BaseType = IndShockConsumerType(**base_params)
 EstTypeList = []
 for j in range(TypeCount):
     EstTypeList.append(deepcopy(BaseType))
-    EstTypeList[-1](seed = j)
+    EstTypeList[-1].seed = j
 
 # %% {"code_folding": []}
 # Define the objective function
@@ -120,21 +170,21 @@ def FagerengObjFunc(center,spread,verbose=False):
         Euclidean distance between simulated MPCs and (adjusted) Table 9 MPCs.
     '''
     # Give our consumer types the requested discount factor distribution
-    beta_set = approxUniform(N=TypeCount,bot=center-spread,top=center+spread).X
+    beta_set = Uniform(bot=center-spread,top=center+spread).approx(N=TypeCount).X
     for j in range(TypeCount):
-        EstTypeList[j](DiscFac = beta_set[j])
+        EstTypeList[j].DiscFac = beta_set[j]
 
     # Solve and simulate all consumer types, then gather their wealth levels
-    multiThreadCommands(EstTypeList,['solve()','initializeSim()','simulate()','unpackcFunc()'])
-    WealthNow = np.concatenate([ThisType.aLvlNow for ThisType in EstTypeList])
+    multi_thread_commands(EstTypeList,['solve()','initialize_sim()','simulate()','unpack_cFunc()'])
+    WealthNow = np.concatenate([ThisType.state_now["aLvl"] for ThisType in EstTypeList])
 
     # Get wealth quartile cutoffs and distribute them to each consumer type
-    quartile_cuts = getPercentiles(WealthNow,percentiles=[0.25,0.50,0.75])
+    quartile_cuts = get_percentiles(WealthNow,percentiles=[0.25,0.50,0.75])
     for ThisType in EstTypeList:
         WealthQ = np.zeros(ThisType.AgentCount,dtype=int)
         for n in range(3):
-            WealthQ[ThisType.aLvlNow > quartile_cuts[n]] += 1
-        ThisType(WealthQ = WealthQ)
+            WealthQ[ThisType.state_now["aLvl"] > quartile_cuts[n]] += 1
+        ThisType.WealthQ = WealthQ
 
     # Keep track of MPC sets in lists of lists of arrays
     MPC_set_list = [ [[],[],[],[]],
@@ -145,18 +195,18 @@ def FagerengObjFunc(center,spread,verbose=False):
     # Calculate the MPC for each of the four lottery sizes for all agents
     for ThisType in EstTypeList:
         ThisType.simulate(1)
-        c_base = ThisType.cNrmNow
+        c_base = ThisType.controls["cNrm"]
         MPC_this_type = np.zeros((ThisType.AgentCount,4))
         for k in range(4): # Get MPC for all agents of this type
             Llvl = lottery_size[k]
-            Lnrm = Llvl/ThisType.pLvlNow
+            Lnrm = Llvl/ThisType.state_now["pLvl"]
             if do_secant:
-                SplurgeNrm = Splurge/ThisType.pLvlNow
-                mAdj = ThisType.mNrmNow + Lnrm - SplurgeNrm
+                SplurgeNrm = Splurge/ThisType.state_now["pLvl"]
+                mAdj = ThisType.state_now["mNrm"] + Lnrm - SplurgeNrm
                 cAdj = ThisType.cFunc[0](mAdj) + SplurgeNrm
                 MPC_this_type[:,k] = (cAdj - c_base)/Lnrm
             else:
-                mAdj = ThisType.mNrmNow + Lnrm
+                mAdj = ThisType.state_now["mNrm"] + Lnrm
                 MPC_this_type[:,k] = cAdj = ThisType.cFunc[0].derivative(mAdj)
 
         # Sort the MPCs into the proper MPC sets
@@ -189,7 +239,7 @@ def FagerengObjFunc(center,spread,verbose=False):
 
 guess = [0.92,0.03]
 f_temp = lambda x : FagerengObjFunc(x[0],x[1])
-opt_params = minimizeNelderMead(f_temp, guess, verbose=False)
+opt_params = minimize_nelder_mead(f_temp, guess, verbose=False)
 print('Finished estimating for scaling factor of ' + str(AdjFactor) + ' and "splurge amount" of $' + str(1000*Splurge))
 print('Optimal (beta,nabla) is ' + str(opt_params) + ', simulated MPCs are:')
 dist = FagerengObjFunc(opt_params[0],opt_params[1],True)
@@ -203,6 +253,10 @@ print('Distance from Fagereng et al Table 9 is ' + str(dist))
 # Explain why you get the results you do, and comment on possible interpretations of the "splurge" that might be consistent with economic theory.    
 # Hint: What the authors are able to measure is actually the marginal propensity to EXPEND, not the marginal propensity to CONSUME as it is defined in our benchmark model.
 
+# %%
+# PROBLEM: soln here 
+# (rename all-caps word PROBLEM in line above to all-caps solution)
+
 # %% [markdown] {"heading_collapsed": true}
 # ### PROBLEM
 #
@@ -210,3 +264,7 @@ print('Distance from Fagereng et al Table 9 is ' + str(dist))
 #
 # For the baseline version of the model with the "splurge" component, calculate the MPCC's for years `t+1` through `t+3` and plot them together with the MPC in the first year (including the splurge component)
 #
+
+# %% {"hidden": true}
+# PROBLEM: soln here 
+# (rename all-caps word PROBLEM in line above to all-caps solution)

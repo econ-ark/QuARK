@@ -1,21 +1,49 @@
 # ---
 # jupyter:
 #   jupytext:
+#     cell_metadata_filter: ExecuteTime,-autoscroll,collapsed
+#     notebook_metadata_filter: all,-widgets,-varInspector
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 1.2.1
+#       format_version: '1.3'
+#       jupytext_version: 1.11.5
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
+#   language_info:
+#     codemirror_mode:
+#       name: ipython
+#       version: 3
+#     file_extension: .py
+#     mimetype: text/x-python
+#     name: python
+#     nbconvert_exporter: python
+#     pygments_lexer: ipython3
+#     version: 3.6.9
+#   latex_envs:
+#     LaTeX_envs_menu_present: true
+#     autoclose: false
+#     autocomplete: false
+#     bibliofile: biblio.bib
+#     cite_by: apalike
+#     current_citInitial: 1
+#     eqLabelWithNumbers: true
+#     eqNumInitial: 1
+#     hotkeys:
+#       equation: Ctrl-E
+#       itemize: Ctrl-I
+#     labels_anchors: false
+#     latex_user_defs: false
+#     report_style_numbering: false
+#     user_envs_cfg: false
 # ---
 
 # %% [markdown]
 # # Perfect Foresight Model Impatience Conditions
 
-# %% {"code_folding": [0]}
+# %% code_folding=[0]
 # Initial notebook set up
 
 # %matplotlib inline
@@ -29,10 +57,10 @@ sys.path.insert(0, os.path.abspath('../lib'))
 
 import numpy as np
 import HARK 
-from time import clock
+import time
 from copy import deepcopy
 mystr = lambda number : "{:.4f}".format(number)
-from HARK.utilities import plotFuncs
+from HARK.utilities import plot_funcs
 
 # These last two will make our charts look nice
 plt.style.use('seaborn-darkgrid')

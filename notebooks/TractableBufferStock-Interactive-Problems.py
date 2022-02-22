@@ -2,19 +2,48 @@
 # ---
 # jupyter:
 #   jupytext:
-#     cell_metadata_filter: collapsed,code_folding
+#     cell_metadata_filter: ExecuteTime,-autoscroll,collapsed
 #     formats: ipynb,py:percent
+#     notebook_metadata_filter: all,-widgets,-varInspector
 #     text_representation:
 #       extension: .py
 #       format_name: percent
-#       format_version: '1.2'
-#       jupytext_version: 1.2.1
+#       format_version: '1.3'
+#       jupytext_version: 1.11.5
 #   kernel_info:
 #     name: python3
 #   kernelspec:
 #     display_name: Python 3
 #     language: python
 #     name: python3
+#   language_info:
+#     codemirror_mode:
+#       name: ipython
+#       version: 3
+#     file_extension: .py
+#     mimetype: text/x-python
+#     name: python
+#     nbconvert_exporter: python
+#     pygments_lexer: ipython3
+#     version: 3.6.9
+#   latex_envs:
+#     LaTeX_envs_menu_present: true
+#     autoclose: false
+#     autocomplete: true
+#     bibliofile: biblio.bib
+#     cite_by: apalike
+#     current_citInitial: 1
+#     eqLabelWithNumbers: true
+#     eqNumInitial: 1
+#     hotkeys:
+#       equation: Ctrl-E
+#       itemize: Ctrl-I
+#     labels_anchors: false
+#     latex_user_defs: false
+#     report_style_numbering: false
+#     user_envs_cfg: false
+#   nteract:
+#     version: 0.14.4
 # ---
 
 # %% [markdown]
@@ -25,22 +54,22 @@
 # %% [markdown]
 # The [TractableBufferStock](http://www.econ2.jhu.edu/people/ccarroll/public/LectureNotes/Consumption/TractableBufferStock/) model is a (relatively) simple framework that captures all of the qualitative, and many of the quantitative features of optimal consumption in the presence of labor income uncertainty.  
 
-# %% {"code_folding": [0]}
+# %% code_folding=[0]
 # This cell has a bit of (uninteresting) initial setup.
 
 import matplotlib.pyplot as plt
 
 import numpy as np
 import HARK 
-from time import clock
+import time
 from copy import deepcopy
 mystr = lambda number : "{:.3f}".format(number)
 
 from ipywidgets import interact, interactive, fixed, interact_manual
 import ipywidgets as widgets
-from HARK.utilities import plotFuncs
+from HARK.utilities import plot_funcs
 
-# %% {"code_folding": [0]}
+# %% code_folding=[0]
 # Import the model from the toolkit
 from HARK.ConsumptionSaving.TractableBufferStockModel import TractableConsumerType
 
@@ -72,7 +101,7 @@ from HARK.ConsumptionSaving.TractableBufferStockModel import TractableConsumerTy
 # \end{align}
 #
 
-# %% {"code_folding": [0]}
+# %% code_folding=[0]
 # Define a parameter dictionary and representation of the agents for the tractable buffer stock model
 TBS_dictionary =  {'UnempPrb' : .00625,    # Prob of becoming unemployed; working life of 1/UnempProb = 160 qtrs
                    'DiscFac' : 0.975,      # Intertemporal discount factor
@@ -92,13 +121,13 @@ MyTBStype = TractableConsumerType(**TBS_dictionary)
 # \\ \left(\frac{(R \beta (1-\mho))^{1/\rho}}{G (1-\mho)}\right)  &<  1
 # \\ \left(\frac{(R \beta)^{1/\rho}}{G} (1-\mho)^{-\rho}\right)  &<  1
 # \end{align}
-# and recall (from [PerfForesightCRRA](http://econ.jhu.edu/people/ccarroll/public/lecturenotes/consumption/PerfForesightCRRA/)) that the perfect foresight 'Growth Impatience Factor' is 
+# and recall (from [PerfForesightCRRA](https://www.econ2.jhu.edu/people/ccarroll/public/lecturenotes/consumption/PerfForesightCRRA/)) that the perfect foresight 'Growth Impatience Factor' is 
 # \begin{align}\label{eq:PFGIC}
 # \left(\frac{(R \beta)^{1/\rho}}{G}\right)  &<  1
 # \end{align}
 # so since $\mho > 0$, uncertainty makes it harder to be 'impatient.'  To understand this, think of someone who, in the perfect foresight model, was 'poised': Exactly on the knife edge between patience and impatience.  Now add a precautionary saving motive; that person will now (to some degree) be pushed off the knife edge in the direction of 'patience.'  So, in the presence of uncertainty, the conditions on parameters other than $\mho$ must be stronger in order to guarantee 'impatience' in the sense of wanting to spend enough for your wealth to decline _despite_ the extra precautionary motive.
 
-# %% {"code_folding": [3]}
+# %% code_folding=[3]
 # Define a function that plots the employed consumption function and sustainable consumption function 
 # for given parameter values
 
@@ -278,7 +307,7 @@ interact(makeTBSplot,
 #
 # First, create a variable `betaMax` equal to the value of $\beta$ at which the Growth Impatience Factor is exactly equal to 1 (that is, the consumer is exactly on the border between patience and impatience).  (Hint: The formula for this is [here](http://www.econ2.jhu.edu/people/ccarroll/public/LectureNotes/Consumption/TractableBufferStock/#DiscountMaxGICTBS)).
 #
-# Next, create a slider/'widget' like the one above, but where all variables except $\beta$ are set to their default values, and the slider takes $\beta$ from 0.05 below its default value up to `betaMax - 0.01`.  (The numerical solution algorithm becomes unstable when the GIC is too close to being violated, so you don't want to go all the way up to `betaMax.`)
+# Next, create a slider/'widget' like the one above, but where all variables except $\beta$ are set to their default values, and the slider takes $\beta$ from 0.05 below its default value up to `betaMax - 0.01`.  (The numerical solution algorithm becomes unstable when the GICRaw is too close to being violated, so you don't want to go all the way up to `betaMax.`)
 #
 # Explain the logic of the result that you see.
 #
