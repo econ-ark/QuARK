@@ -308,9 +308,13 @@ def calcConsChangeAfterTranShkChange(newVals):
 def calcConsChangeAfterUnempPrbChange(newVals):
     return calcConsChangeAfterUncertaintyChange(ConsumerTypes,newVals,"UnempPrb")
 
-
 # %% [markdown]
 # Now we can finally run our experiment.  In the cell below, we generate a plot of the change in aggregate consumption vs the (underlying) standard deviation of permanent income shocks.
+
+# %%
+#test = calcConsChangeAfterPermShkChange([0.08])
+#print(test)
+
 
 # %% {"code_folding": []}
 # Calculate the consequences of an "MIT shock" to the standard deviation of permanent shocks
@@ -327,7 +331,7 @@ perm_max = BaselineType.PermShkStd[0] * perm_ratio_max
 plt.ylabel('% Change in Consumption')
 plt.xlabel('Std. Dev. of Perm. Income Shock (Baseline = ' + str(round(BaselineType.PermShkStd[0],2)) + ')')
 plt.title('Change in Cons. Following Increase in Perm. Income Uncertainty')
-plt.ylim(-20.,5.)
+plt.ylim(-50.,5.)
 plt.hlines(TargetChangeInC,perm_min,perm_max)
 # The expression below shows the power of python
 plot_funcs([calcConsChangeAfterPermShkChange],perm_min,perm_max,N=num_points)
@@ -357,12 +361,12 @@ num_points = 10 # number of parameter values to plot in graphs. More=slower
 perm_ratio_max = 2.5 # Put whatever value in you want!  maximum number to multiply var of perm income shock by
 
 perm_min = BaselineType.TranShkStd[0] * ratio_min
-perm_max = BaselineType.PermShkStd[0] * perm_ratio_max
+perm_max = BaselineType.TranShkStd[0] * perm_ratio_max
 
 plt.ylabel('% Change in Consumption')
-plt.xlabel('Std. Dev. of Perm. Income Shock (Baseline = ' + str(round(BaselineType.PermShkStd[0],2)) + ')')
-plt.title('Change in Cons. Following Increase in Perm. Income Uncertainty')
-plt.ylim(-20.,5.)
+plt.xlabel('Std. Dev. of Trans. Income Shock (Baseline = ' + str(round(BaselineType.TranShkStd[0],2)) + ')')
+plt.title('Change in Cons. Following Increase in Trans. Income Uncertainty')
+plt.ylim(-50.,5.)
 plt.hlines(TargetChangeInC,perm_min,perm_max)
 # The expression below shows the power of python
 plot_funcs([calcConsChangeAfterTranShkChange],perm_min,perm_max,N=num_points)
@@ -377,13 +381,13 @@ num_points = 10 # number of parameter values to plot in graphs. More=slower
 # First change the variance of the permanent income shock
 perm_ratio_max = 2.5 # Put whatever value in you want!  maximum number to multiply var of perm income shock by
 
-perm_min = BaselineType.PermShkStd[0] * ratio_min
-perm_max = BaselineType.PermShkStd[0] * perm_ratio_max
+perm_min = BaselineType.UnempPrb * ratio_min
+perm_max = BaselineType.UnempPrb * perm_ratio_max
 
 plt.ylabel('% Change in Consumption')
-plt.xlabel('Std. Dev. of Perm. Income Shock (Baseline = ' + str(round(BaselineType.PermShkStd[0],2)) + ')')
-plt.title('Change in Cons. Following Increase in Perm. Income Uncertainty')
-plt.ylim(-20.,5.)
+plt.xlabel('Std. Dev. of Unemployment Probability (Baseline = ' + str(round(BaselineType.UnempPrb,2)) + ')')
+plt.title('Change in Cons. Following Increase in Unemployment Risk')
+plt.ylim(-50.,5.)
 plt.hlines(TargetChangeInC,perm_min,perm_max)
 # The expression below shows the power of python
 plot_funcs([calcConsChangeAfterUnempPrbChange],perm_min,perm_max,N=num_points)
@@ -398,5 +402,25 @@ plot_funcs([calcConsChangeAfterUnempPrbChange],perm_min,perm_max,N=num_points)
 # In more detail, you might incorporate a negative marginal utility shock of 10 percent in the quarter when the pandemic recession hits, followed by a full bounceback of marginal utility to its normal state one quarter later.  And, I suggest you incorporate a stimulus payment of about 5 percent of annual income for a typical consumer.  Your task is to show the path of consumer spending leading up to the pandemic quarter (which should be flat, since the pandemic is unanticipated), and then the path during the pandemic quarter and in the several quarters after it.
 
 # %%
-# PROBLEM: soln here 
-# (rename all-caps problem in line above to all-caps solution)
+# SOLUTION: 
+from HARK.ConsumptionSaving.ConsPrefShockModel import IndShockConsumerType
+CovidShockType = IndShockConsumerType(**init_infinite)
+
+#Creating a Preference Shock:
+CovidShockType.PrefShkDstn = [[0,1,0],[0,-0.1,0]]
+
+CovidShockType.solve(verbose=False)
+
+CovidShockType.initialize_sim()
+CovidShockType.simulate()
+
+
+
+#Aux2 = CovidShockType.controls["cNrm"] 
+#Consumption = np.sum(Aux2)/10000
+
+#plt.plot(Consumption,)
+
+
+
+# %%

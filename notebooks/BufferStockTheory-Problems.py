@@ -2,7 +2,7 @@
 # ---
 # jupyter:
 #   jupytext:
-#     cell_metadata_filter: ExecuteTime,-autoscroll,collapsed
+#     cell_metadata_filter: ExecuteTime,collapsed,pycharm,jp-MarkdownHeadingCollapsed,jupyter,heading_collapsed,slideshow,tags,-autoscroll
 #     cell_metadata_json: true
 #     formats: ipynb,py:percent
 #     notebook_metadata_filter: all,-widgets,-varInspector
@@ -10,9 +10,9 @@
 #       extension: .py
 #       format_name: percent
 #       format_version: '1.3'
-#       jupytext_version: 1.11.5
+#       jupytext_version: 1.13.6
 #   kernelspec:
-#     display_name: Python 3
+#     display_name: Python 3 (ipykernel)
 #     language: python
 #     name: python3
 #   language_info:
@@ -24,7 +24,7 @@
 #     name: python
 #     nbconvert_exporter: python
 #     pygments_lexer: ipython3
-#     version: 3.8.8
+#     version: 3.9.7
 #   latex_envs:
 #     LaTeX_envs_menu_present: true
 #     autoclose: false
@@ -41,6 +41,7 @@
 #     latex_user_defs: false
 #     report_style_numbering: false
 #     user_envs_cfg: false
+#   orig_nbformat: 4
 # ---
 
 # %% [markdown]
