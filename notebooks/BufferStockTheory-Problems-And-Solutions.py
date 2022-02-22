@@ -2,7 +2,7 @@
 # ---
 # jupyter:
 #   jupytext:
-#     cell_metadata_filter: ExecuteTime,collapsed,pycharm,jp-MarkdownHeadingCollapsed,jupyter,heading_collapsed,slideshow,tags,-autoscroll
+#     cell_metadata_filter: ExecuteTime,collapsed,tags,jupyter,slideshow,heading_collapsed,pycharm,jp-MarkdownHeadingCollapsed,-autoscroll
 #     cell_metadata_json: true
 #     formats: ipynb,py:percent
 #     notebook_metadata_filter: all,-widgets,-varInspector
@@ -45,7 +45,7 @@
 # ---
 
 # %% [markdown]
-# # Theoretical Foundations of Buffer Stock Saving
+# # Theoretical Foundations of Buffer Stock Saving (Dostenlinus)
 #
 # <cite data-cite="6202365/8AH9AXN2"></cite>
 #
@@ -70,7 +70,9 @@
 # %% [markdown]
 # `# Setup Python Below`
 
-# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# %% {"tags": []}
+# This cell does some setup
+
 # Import required python packages
 import os.path
 import sys
@@ -98,7 +100,8 @@ if os.path.isdir('binder'):  # Folder defining requirements exists
 # %% [markdown]
 # `# Setup HARK Below`
 
-# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# %% {"tags": []}
+# Import required HARK tools
 from HARK import __version__ as HARKversion
 from HARK.utilities import (
     plot_funcs, find_gui, make_figs, determine_platform,
@@ -145,9 +148,7 @@ PermGroFac, PermShkStd, TranShkStd = base_params['PermGroFac'][0], base_params['
 base_params['LivPrb'] = [1.0]   # 100 percent chance of living to next period
 base_params['BoroCnstArt'] = None    # No artificial borrowing constraint
 
-
-
-# %% [markdown] {"jp-MarkdownHeadingCollapsed": true, "tags": []}
+# %% [markdown] {"tags": []}
 # ## [The Problem](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory/BufferStockTheory3.html#The-Problem)
 #
 # The paper [calibrates](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#Calibration) a small set of parameters:
@@ -280,7 +281,7 @@ base_params['TranShkStd'] = [0.1]          # Standard deviation of log transitor
 # %% [markdown]
 # `# Create a buffer stock consumer instance:`
 
-# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# %% {"tags": []}
 # Create a buffer stock consumer instance by invoking the IndShockConsumerType class
 # with the parameter dictionary "base_params"
 
@@ -299,7 +300,7 @@ cFunc = baseAgent_Fin.cFunc    # Shortcut
 # %% [markdown]
 # `# Plot the consumption rules:`
 
-# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# %% {"tags": []}
 # Plot the different consumption rules for the different periods
 
 mPlotMin = 0
@@ -345,7 +346,7 @@ plt.text(0, 7.05, "$c$", fontsize=fsbig)
 plt.text(xMax+0.1, 0, "$m$", fontsize=fsbig)
 
 # Save the figure
-makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
+#makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 
 # %% [markdown] {"slideshow": {"slide_type": "slide"}}
 # Use the [interactive dashboard](#interactive-dashboard) to explore the effects of changes in patience, risk aversion, or risk
@@ -363,6 +364,44 @@ makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 #          * `from HARK.utilities import plot_funcs_der, plot_funcs`
 #
 # Create a cell or cells in the notebook below this cell and put your solution there; comment on the size of $\UnempPrb$ needed to make the two models visually indistinguishable
+
+# %%
+from HARK.utilities import plot_funcs_der, plot_funcs
+
+
+base_params['UnempPrb'] = UnempPrb = 0.1
+
+TwoPeriodModel = IndShockConsumerType(**base_params)
+TwoPeriodModel.cycles = 2   # Make this type have a two period horizon (Set T = 2)
+
+TwoPeriodModel.solve(quietly=True)  # Solve the model quietly
+
+TwoPeriodModel.unpack('cFunc')  # Retrieve consumption functions
+cFunc1 = TwoPeriodModel.cFunc    # Shortcut
+
+base_params['UnempPrb'] = UnempPrb = 0.001
+
+TwoPeriodModel = IndShockConsumerType(**base_params)
+TwoPeriodModel.cycles = 2   # Make this type have a two period horizon (Set T = 2)
+
+TwoPeriodModel.solve(quietly=True)  # Solve the model quietly
+
+TwoPeriodModel.unpack('cFunc')  # Retrieve consumption functions
+cFunc2 = TwoPeriodModel.cFunc    # Shortcut
+
+base_params['UnempPrb'] = UnempPrb = 0.0000000000000001
+
+TwoPeriodModel = IndShockConsumerType(**base_params)
+TwoPeriodModel.cycles = 2   # Make this type have a two period horizon (Set T = 2)
+
+TwoPeriodModel.solve(quietly=True)  # Solve the model quietly
+
+TwoPeriodModel.unpack('cFunc')  # Retrieve consumption functions
+cFunc3 = TwoPeriodModel.cFunc    # Shortcut
+plot_funcs([cFunc1[0],cFunc2[0], cFunc3[0]], 0, 5)
+
+# %% [markdown]
+# The distinguishability of two copies of the model with different unemployment probability depends on how much one zooms into the graph, but generally they are pretty close to the zero probability solution if the probability is less than one percent.
 
 # %% [markdown] {"tags": []}
 # ## Factors and Conditions
@@ -448,7 +487,7 @@ makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 # ## [Natural Borrowing Constraint limits to Artificial Borrowing Constraint](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#The-Liquidity-Constrained-Solution-as-a-Limit)
 
 # %% [markdown]
-# Defining $\chi(\UnempPrb)$ as the consumption function associated with any particular probability of a zero-income shock $\UnempPrb,$ and defining $\hat{\chi}$ as the consumption function that would apply in the absence of the transitory zero-income shocks but in the presence of an 'artificial' borrowing constraint requiring $a \geq 0$ (_a la_ Deaton (1991)), the paper shows that
+# Defining $\chi(\UnempPrb)$ as the consumption function associated with any particular probability of a zero-income shock $\UnempPrb$, and defining $\hat{\chi}$ as the consumption function that would apply in the absence of the transitory zero-income shocks but in the presence of an 'artificial' borrowing constraint requiring $a \geq 0$ (_a la_ Deaton (1991)), the paper shows that
 #
 # \begin{eqnarray}
 # \lim_{\UnempPrb \downarrow 0}~\chi(\UnempPrb) & = & \hat{\chi}
@@ -477,7 +516,7 @@ makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 #
 # ### [If the GIC-Nrm Holds, $\exists$ a finite 'target' $\mNrm$](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#onetarget)
 #
-# Section [Individual Target Wealth](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#onetarget) shows that, under parameter values for which the limiting consumption function exists, if the [GICMod](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICMod) holds then there will be a value $\Trg{m}$ such that:
+# Section [Individual Target Wealth](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#onetarget) shows that, under parameter values for which the limiting consumption function exists, if the [GICNrm](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICNrm) holds then there will be a value $\Trg{m}$ such that:
 #
 # \begin{eqnarray*}
 # \Ex[m_{t+1}] & > & m_{t}~\text{if $m_{t} < \Trg{m}$} \\
@@ -514,43 +553,43 @@ makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 # which can be solved numerically for the unique $\Bal{\mNrm}$ that satisfies it.
 #
 #
-# ### [Example With Finite Pseudo-Steady-State But Infinite Target Wealth](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICModFailsButGICRawHolds)
+# ### [Example With Finite Pseudo-Steady-State But Infinite Target Wealth](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICNrmFailsButGICRawHolds)
 #
-# [A figure](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICModFailsButGICRawHolds) depicts a solution when the **FVAC** [(Finite Value of Autarky Condition)](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#FVAC) and [**WRIC**](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#FVAC) hold (so that the model has a solution), the [**GIC**](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICRaw) holds, so the model has a pseudo-steady-state $\Bal{\mNrm}$, but the [**GIC-Nrm**](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICMod) fails, so the model does not have an individual target wealth ratio $\Trg{\mNrm}$ (or, rather, the target wealth ratio is infinity, as can be seen by the fact that the level of $\cNrm$ is always below the level that would keep $\Ex_{t}[\Delta \mNrm_{t+1}] = 0$).
+# [A figure](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICNrmFailsButGICRawHolds) depicts a solution when the **FVAC** [(Finite Value of Autarky Condition)](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#FVAC) and [**WRIC**](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#FVAC) hold (so that the model has a solution), the [**GIC**](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICRaw) holds, so the model has a pseudo-steady-state $\Bal{\mNrm}$, but the [**GIC-Nrm**](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICNrm) fails, so the model does not have an individual target wealth ratio $\Trg{\mNrm}$ (or, rather, the target wealth ratio is infinity, as can be seen by the fact that the level of $\cNrm$ is always below the level that would keep $\Ex_{t}[\Delta \mNrm_{t+1}] = 0$).
 #
 # This example was constructed by quadrupling the variance of the permanent shocks from the baseline parameterization.  The extra precautionary saving induced by increased uncertainty is what pushes the agent into the region without a target wealth ratio.
 
 # %% [markdown]
-# `# Create an example consumer instance where the GICMod fails but the GIC Holds:`
+# `# Create an example consumer instance where the GICNrm fails but the GIC Holds:`
 
-# %% {"tags": []}
-# GICModFailsButGICRawHolds Example
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# GICNrmFailsButGICRawHolds Example
 
 base_params['cycles'] = 0  # revert to default of infinite horizon
-GICModFailsButGICRawHolds_params = dict(base_params)
+GICNrmFailsButGICRawHolds_params = dict(base_params)
 
 # Increase patience by increasing risk
-GICModFailsButGICRawHolds_params['PermShkStd'] = [0.2]
+GICNrmFailsButGICRawHolds_params['PermShkStd'] = [0.2]
 
 # Create an agent with these parameters
-GICModFailsButGICRawHolds = \
-    IndShockConsumerType(**GICModFailsButGICRawHolds_params,
+GICNrmFailsButGICRawHolds = \
+    IndShockConsumerType(**GICNrmFailsButGICRawHolds_params,
                          quietly=True,messaging_level=logging.CRITICAL  # If True, output suppressed
                          )
 # %% [markdown]
 # `# Solve that consumer's problem:`
 
-# %% {"tags": []}
+# %% {"jupyter": {"source_hidden": true}, "tags": []}
 # Solve the model for these parameter values
-GICModFailsButGICRawHolds.tolerance = 0.0001  # Declare victory at ...
+GICNrmFailsButGICRawHolds.tolerance = 0.0001  # Declare victory at ...
 # Suppress output during solution
-GICModFailsButGICRawHolds.solve(quietly=False,messaging_level=logging.CRITICAL) 
+GICNrmFailsButGICRawHolds.solve(quietly=False,messaging_level=logging.CRITICAL) 
 
 # Because we are trying to solve a problem very close to the poised patience
 # values, we want to do it with extra precision to be sure we've gotten the
 # answer right.  We can retrieve the distance between the last two solutions:
 
-distance_original = GICModFailsButGICRawHolds.solution[0].distance_last
+distance_original = GICNrmFailsButGICRawHolds.solution[0].distance_last
 
 # But high precision would have slowed things down if we used it from the start
 
@@ -558,15 +597,15 @@ distance_original = GICModFailsButGICRawHolds.solution[0].distance_last
 # parameters that will yield a more precise answer:
 
 # Solve with larger than normal range
-GICModFailsButGICRawHolds.aXtraMax = GICModFailsButGICRawHolds.aXtraMax * 10
+GICNrmFailsButGICRawHolds.aXtraMax = GICNrmFailsButGICRawHolds.aXtraMax * 10
 
 # Solve using four times as many gridpoints
-GICModFailsButGICRawHolds.aXtraCount = GICModFailsButGICRawHolds.aXtraCount * 4
+GICNrmFailsButGICRawHolds.aXtraCount = GICNrmFailsButGICRawHolds.aXtraCount * 4
 
-GICModFailsButGICRawHolds.update_assets_grid()
+GICNrmFailsButGICRawHolds.update_assets_grid()
 
 # Solve to a 10 times tighter degree of error tolerance
-GICModFailsButGICRawHolds.tolerance = GICModFailsButGICRawHolds.tolerance/10
+GICNrmFailsButGICRawHolds.tolerance = GICNrmFailsButGICRawHolds.tolerance/10
 
 # When the solver reaches its tolerance threshold, it changes the solver
 # attribute stge_kind to have 'iter_status' of 'finished'
@@ -574,47 +613,47 @@ GICModFailsButGICRawHolds.tolerance = GICModFailsButGICRawHolds.tolerance/10
 # To continue the solution from where we left off, we just change the
 # 'iter_status' to 'iterator' and tell it to ".solve()" again
 
-GICModFailsButGICRawHolds.solution[0].stge_kind['iter_status'] = 'iterator'
+GICNrmFailsButGICRawHolds.solution[0].stge_kind['iter_status'] = 'iterator'
 # continue solving
 
 # Setting messaging_level to NOTSET prints all info including progress
-GICModFailsButGICRawHolds.solve(messaging_level=logging.NOTSET, quietly=False)
+GICNrmFailsButGICRawHolds.solve(messaging_level=logging.NOTSET, quietly=False)
 
 # Test whether the new solution meets a tighter tolerance than before:
-distance_now = GICModFailsButGICRawHolds.solution[0].distance_last
+distance_now = GICNrmFailsButGICRawHolds.solution[0].distance_last
 print('\ndistance_now < distance_original: ' +
       str(distance_now < distance_original))
 
 # Again increase the range
-GICModFailsButGICRawHolds.aXtraMax = GICModFailsButGICRawHolds.aXtraMax * 10
+GICNrmFailsButGICRawHolds.aXtraMax = GICNrmFailsButGICRawHolds.aXtraMax * 10
 
 # and gridpoints
-GICModFailsButGICRawHolds.aXtraCount = GICModFailsButGICRawHolds.aXtraCount * 2
+GICNrmFailsButGICRawHolds.aXtraCount = GICNrmFailsButGICRawHolds.aXtraCount * 2
 
 # construct grid with the extra gridpoints and expanded range
-GICModFailsButGICRawHolds.update_assets_grid()
+GICNrmFailsButGICRawHolds.update_assets_grid()
 
 # and decrease error tolerance
-GICModFailsButGICRawHolds.tolerance = GICModFailsButGICRawHolds.tolerance/100
+GICNrmFailsButGICRawHolds.tolerance = GICNrmFailsButGICRawHolds.tolerance/100
 
 # mark as not finished but ready to continue iterating
-GICModFailsButGICRawHolds.solution[0].stge_kind['iter_status'] = 'iterator'
+GICNrmFailsButGICRawHolds.solution[0].stge_kind['iter_status'] = 'iterator'
 
 # continue solving
-GICModFailsButGICRawHolds.solve(messaging_level=logging.DEBUG, quietly=False)
+GICNrmFailsButGICRawHolds.solve(messaging_level=logging.DEBUG, quietly=False)
 
 # Test whether the new solution meets a tighter tolerance than before:
-distance_now = GICModFailsButGICRawHolds.solution[0].distance_last
+distance_now = GICNrmFailsButGICRawHolds.solution[0].distance_last
 print('\ndistance_now < distance_original: ' +
       str(distance_now < distance_original))
 
 # %% [markdown]
 # `# Plot the results:`
 
-# %% {"pycharm": {"is_executing": true}, "tags": []}
-# Plot https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICModFailsButGICRawHolds
+# %% {"jupyter": {"source_hidden": true}, "pycharm": {"is_executing": true}, "tags": []}
+# Plot https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#GICNrmFailsButGICRawHolds
 
-soln = GICModFailsButGICRawHolds.solution[0]  # Short alias for solution
+soln = GICNrmFailsButGICRawHolds.solution[0]  # Short alias for solution
 
 # Get objects that have been Built, parameters configured, and expectations 
 Bilt, Pars, E_tp1_ = soln.Bilt, soln.Pars, soln.E_Next_
@@ -650,8 +689,8 @@ if latexExists:
     c_Unconstrained_txt = r'$\bar{\cFunc}(\mNrm)$'
 else:
     c_Stable_TrgNrm_txt = "$\mathsf{E}_{t}[\Delta m_{t+1}] = 0$"
-    c_Stable_BalLvl_txt = "$\mathsf{E}_{t}[\mathbf{m}_{t+1}/\mathbf{m}_{t}] = \Phi$"
-    c_Stable_BalLog_txt = "$\mathsf{E}_{t}[\log \mathbf{m}_{t+1} - \log \mathbf{m}_{t}] = \log \Phi$"
+    c_Stable_BalLvl_txt = "$\mathsf{E}_{t}[\mathbf{m}_{t+1}/\mathbf{m}_{t}] = \PermGroFac$"
+    c_Stable_BalLog_txt = "$\mathsf{E}_{t}[\log \mathbf{m}_{t+1} - \log \mathbf{m}_{t}] = \log \PermGroFac$"
     c_Unconstrained_txt = r'$\bar{\cFunc}(\mNrm)$'
 
 cVals_Lmting_color = "black"
@@ -700,7 +739,7 @@ else:
     ax.text(mBalLvl+0.02, cNrmFacBalLvl-0.10, r"$\nwarrow$", fontsize=fsmid)
     ax.text(mBalLvl+0.25, cNrmFacBalLvl-0.18, r"$\check{m}~$", fontsize=fsmid)
 
-makeFig('GICModFailsButGICRawHolds')
+makeFig('GICNrmFailsButGICRawHolds')
 print('Finite mBalLvl but infinite mNrmFacTrgNrm')
 
 # %% [markdown]
@@ -786,7 +825,7 @@ baseAgent_Inf = IndShockConsumerType(
 # %% [markdown]
 # `# Solve problem of consumer with baseline parameters:`
 
-# %% {"pycharm": {"is_executing": true, "name": "#%%\n"}, "tags": []}
+# %% {"jupyter": {"source_hidden": true}, "pycharm": {"is_executing": true, "name": "#%%\n"}, "tags": []}
 # Solve baseline parameters agent
 tweaked_params = deepcopy(base_params)
 tweaked_params['DiscFac'] = 0.970  # Tweak to make figure clearer
@@ -799,7 +838,7 @@ baseAgent_Inf.solve(
 # %% [markdown] {"tags": []}
 # `# Plot growth factors for various model elements at steady state:`
 
-# %% {"pycharm": {"is_executing": true}, "tags": []}
+# %% {"jupyter": {"source_hidden": true}, "pycharm": {"is_executing": true}, "tags": []}
 # Plot growth rates
 
 soln = baseAgent_Inf.solution[0]
@@ -886,11 +925,11 @@ if latexExists:
     cLvlAPFac_lbl = r'$\pmb{\text{\TH}} = (\Rfree\DiscFac)^{1/\CRRA}$'
 else:
     mNrmFacTrg_lbl = r'$\mathsf{E}_{t}[m_{t+1}/m_{t}]:~ \hat{m} \rightarrow~~$'
-    PermGro_lbl = r"$\Phi$"
+    PermGro_lbl = r"$\PermGroFac$"
     cLvlGroFac_lbl = r"$\mathsf{E}_{t}[\mathbf{c}_{t+1}/\mathbf{c}_{t}]$"
     mNrmGroFac_lbl = r"$\mathsf{E}_{t}[m_{t+1}/m_{t}]^{\nearrow}$"
     mLvlGroFac_lbl = r"$\mathsf{E}_{t}[\mathbf{m}_{t+1}/\mathbf{m}_{t}]$"
-    mBalLvl_lbl = r"$\check{m}_{\searrow}$"    
+    mBalLvl_lbl = r"$m\check_{\searrow}$"    
     cLvlAPFac_lbl = Thorn + r'$= (\mathsf{R}\beta)^{1/\rho}$'
 
 
@@ -934,7 +973,7 @@ makeFig('cNrmTargetFig')
 # %% [markdown] {"tags": []}
 # `# Define bounds for figure:`
 
-# %% {"pycharm": {"is_executing": true}, "tags": []}
+# %% {"jupyter": {"source_hidden": true}, "pycharm": {"is_executing": true}, "tags": []}
 # Define mpc_Min, h_inf and PF consumption function, upper and lower bound of c function
 
 # construct and solve it silently
@@ -963,18 +1002,15 @@ def cFunc_BotBnd(m): return mpc_Min * m
 # %% [markdown]
 # `# Plot figure showing bounds`
 
-# %% {"pycharm": {"is_executing": true}, "tags": []}
+# %% {"jupyter": {"source_hidden": true}, "pycharm": {"is_executing": true}, "tags": []}
 # Plot the consumption function and its bounds
+
 cMaxLabel = r'$\overline{c}(m)= (m-1+h)\tilde{\kappa}$'
 cMinLabel = r'Lower Bound: $\tilde{c}(m)= (1-\pmb{\text{\TH}}_{\mathsf{R}})\tilde{\kappa}m$'
 if not latexExists:
     cMaxLabel = r'$\bar{c}(m) = (m-1+h)\kappa$'  # Use unicode kludge
     cMinLabel = r'Lower Bound: c̲$(m)= (1-$'+Thorn+r'$_{\mathsf{R}})m = \kappa m$'
-#    cMinLabel = r'Lower Bound: c̲$(m)= (1-$'+   ''+r'$_{\mathsf{R}})m = \kappa m$'
-    cLvlAPFac_lbl = Thorn + r'$= (\mathsf{R}\beta)^{1/\rho}$'
-#    cLvlAPFac_lbl = ' ' + r'$= (\mathsf{R}\beta)^{1/\rho}$'
 
-    
 mPlotMin = 0.0
 mPlotMax = 25
 # mKnk is point where the two upper bounds meet
@@ -1002,20 +1038,17 @@ plt.text(mPlotMin, cTopMult*cFunc_Uncnst(mPlotMax)+0.05, "$c$", fontsize=22)
 plt.text(mPlotMax+0.1, mPlotMin, "$m$", fontsize=22)
 plt.text(2.5, 1, r'$c(m)$', fontsize=22, fontweight='bold')
 upper_upper_bound_m = 4.6
-
 if latexExists:
-    upper_upper_bound_m_lbl = r'$\leftarrow \overline{\overline{c}}(m)= \overline{\MPC}m = (1-\UnempPrb^{1/\CRRA}\pmb{\text{\TH}}_{\mathsf{R}})m$'
-else:
-    upper_upper_bound_m_lbl = r'$\overline{\overline{c}}(m)= \overline{\kappa}m = (1-\wp^{1/\rho}$'+Thorn+r'$_{\mathsf{R}})m$'
-#    upper_upper_bound_m_lbl = r'$\overline{\overline{c}}(m)= \overline{\kappa}m = (1-\wp^{1/\rho}$'+   ''+r'$_{\mathsf{R}})m$'
-    
-plt.text(upper_upper_bound_m+0.6, cFunc_TopBnd(upper_upper_bound_m+0.5), 
-             upper_upper_bound_m_lbl,
+    plt.text(upper_upper_bound_m+0.6, cFunc_TopBnd(upper_upper_bound_m+0.5), 
+             r'$\leftarrow \overline{\overline{c}}(m)= \overline{\MPC}m = (1-\UnempPrb^{1/\CRRA}\pmb{\text{\TH}}_{\mathsf{R}})m$',
              fontsize=22, fontweight='bold')
-
+else:
+    plt.text(upper_upper_bound_m+0.6, cFunc_TopBnd(upper_upper_bound_m+0.5), 
+             r'$\overline{\overline{c}}(m)= \overline{\kappa}m = (1-\wp^{1/\rho}$'+Thorn+'$_{\mathsf{R}})m$',
+             fontsize=22, fontweight='bold')
 upper_bound_m = 12
-upper_bound_m_lbl=r'Upper Bound $ = $ Min $[\overline{\overline{c}}(m),\overline{c}(m)]$'
-plt.text(upper_bound_m, cFunc_Uncnst(upper_bound_m)-0.3, upper_bound_m_lbl, fontsize=22, fontweight='bold')
+plt.text(
+    upper_bound_m, cFunc_Uncnst(upper_bound_m)-0.3, r'Upper Bound $ = $ Min $[\overline{\overline{c}}(m),\overline{c}(m)]$', fontsize=22, fontweight='bold')
 plt.text(8, 0.9, cMinLabel, fontsize=22, fontweight='bold')
 lower_unc_bound_m = 1.7
 lower_unc_bound_c = cFunc_Uncnst(lower_unc_bound_m)-0.2
@@ -1042,9 +1075,9 @@ makeFig('cFuncBounds')
 # The paper also derives an analytical limit $\bar{\MPC}$ for the MPC as $m$ approaches 0., its bounding value.  Strict concavity of the consumption function implies that the consumption function will be everywhere below a function $\bar{\MPC}m$, and strictly declining everywhere.  The last figure plots the MPC between these two limits.
 
 # %% [markdown]
-# `# Make and plot figure showing the upper and lower limits of the MPC:`
+# `# Make and plot figure showing the upper and lower limites of the MPC:`
 
-# %% {"pycharm": {"is_executing": true}, "tags": []}
+# %% {"jupyter": {"source_hidden": true}, "pycharm": {"is_executing": true}, "tags": []}
 # The last figure shows the upper and lower limits of the MPC
 
 mPlotMin = 0
@@ -1073,7 +1106,7 @@ if latexExists:
              fontsize=26, fontweight='bold')  # Use Thorn character
 else:
     plt.text(1.5, 0.6, r'$\kappa(m) \equiv c^{\prime}(m)$', fontsize=26, fontweight='bold')
-    plt.text(5, 0.87, r'$(1-\wp^{1/\rho}$'+Thorn+'$_{R})\equiv \bar{\kappa}$',
+    plt.text(5, 0.87, r'$(1-\wp^{1/\rho}$'+Thorn+'${R})\equiv \bar{\kappa}$',
              fontsize=26, fontweight='bold')  # Use Phi instead of Thorn (alas)
 
 plt.text(0.5, 0.07, kappaDef, fontsize=26, fontweight='bold')
@@ -1096,8 +1129,8 @@ makeFig('MPCLimits')
 # %% [markdown] {"heading_collapsed": "true", "tags": []}
 # ### Appendix: Options for Interacting With This Notebook <a id='optionsForInstalling'></a>
 #
-# 1. [View (static version)](https://nbviewer.org/github/econ-ark/BufferStockTheory/blob/master/BufferStockTheory.ipynb)
-# 1. [Launch Online Interactive Version](https://econ-ark.org/materials/bufferstocktheory?launch)
+# 1. [View (static version)](https://github.com/llorracc/BufferStockTheory/blob/master/Code/Python/BufferStockTheory.ipynb) on GitHub (warning:  GitHub does not render Jupyter notebooks reliably)
+# 1. [Launch Online Interactive Version](https://econ-ark.org/materials/BufferStockTheory/#launch)
 # 1. For fast (local) execution, install [econ-ark](http://github.com/econ-ark) on your computer ([QUICK START GUIDE](https://github.com/econ-ark/HARK/blob/master/README.md)) then follow these instructions to retrieve the full contents of the `BufferStockTheory` [REMARK](https://github.com/econ-ark/BufferStockTheory):
 #    1. At a command line, change the working directory to the one where you want to install
 #        * On unix, if you install in the `/tmp` directory, the installation will disappear after a reboot:
@@ -1113,7 +1146,7 @@ makeFig('MPCLimits')
 #
 # [Perfect Foresight Liquidity Constrained Solution](https://econ-ark.github.io/BufferStockTheory/BufferStockTheory3.html#ApndxLiqConstr)
 
-# %% {"pycharm": {"is_executing": true}, "tags": []}
+# %% {"jupyter": {"source_hidden": true}, "pycharm": {"is_executing": true}, "tags": []}
 PFGICRawHoldsFHWCFailsRICFails_par = deepcopy(init_perfect_foresight)
 
 # Replace parameters.
