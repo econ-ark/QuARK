@@ -216,13 +216,13 @@ BaselineType.simulate()
 
 # %%
 # Take the difference within each array and square it
-Inc = BaselineType.history['pLvl']
+Inc = np.log(BaselineType.history['pLvl'])
 Inc.shape # period x agent count
 Y = []
 D = []
 
 
-for i in range(AgentCount): # For each agent (just take the first 100)
+for i in range(AgentCount): # For each agent
     for n in range(T_sim-1): # t-1 differences
         for j in range(T_sim - n - 1): # period
             Y_aux = (Inc[j+n+1, i] - Inc[j , i])**2
@@ -264,11 +264,11 @@ def Regression(Type,T_sim,AgentCount):
     
     # Calculate variables
     # Take the difference within each array and square it
-    Inc = Type.history['pLvl']
+    Inc = np.log(Type.history['pLvl'])
     Y = []
     D = []
 
-    for i in range(AgentCount): # For each agent (just take the first 100)
+    for i in range(AgentCount): # For each agent
         for n in range(T_sim-1): # t-1 differences
             for j in range(T_sim - n - 1): # period
                 Y_aux = (Inc[j+n+1, i] - Inc[j , i])**2
@@ -301,20 +301,22 @@ BaselineType = IndShockConsumerType(**init_infinite)
 T = [10, 100, 200, 300, 400, 800]
 A = [50, 100, 200, 300, 400, 500]
 
-D_sd_psi_time = [] #np.zeros((len(T),len(A)))
-D_sd_theta_time = [] # np.zeros((len(T),len(A)))
+D_sd_psi_time = []
+D_sd_theta_time = []
 
 for i in T:
-    D_sd_psi_time.append((Regression(BaselineType, i, 300)['diff_sd_psi'])) # baseline with 200 agents
-    D_sd_theta_time.append((Regression(BaselineType, i, 300)['diff_sd_theta']))
+    stats_est= Regression(BaselineType, i, 300) # baseline with 300 agents
+    D_sd_psi_time.append(stats_est['diff_sd_psi']) 
+    D_sd_theta_time.append(stats_est['diff_sd_theta'])
 
 # agents
-D_sd_psi_agents = [] #np.zeros((len(T),len(A)))
-D_sd_theta_agents = [] # np.zeros((len(T),len(A)))
+D_sd_psi_agents = []
+D_sd_theta_agents = []
 
 for i in A:
-    D_sd_psi_agents.append((Regression(BaselineType, 300, i)['diff_sd_psi'])) # baseline with 200 periods
-    D_sd_theta_agents.append((Regression(BaselineType, 300, i)['diff_sd_theta']))
+    stats_est= Regression(BaselineType, 300, i) # baseline with 300 periods
+    D_sd_psi_agents.append(stats_est['diff_sd_psi']) 
+    D_sd_theta_agents.append(stats_est['diff_sd_theta'])
 
 # %%
 # let's plot them
@@ -346,6 +348,6 @@ plt.show(block=False)
 
 # %% [markdown]
 # ### Discussion
-# From this exercise we can see that the regression may be simple, but is very comuputational intensive if we use a larger number of periods and/or agents. Unfortunately, we need a large number of both to receive estimates which are close to the true values. Here, an increase in the time periods is particularly crucial to reduce the difference between estimated and true parameter.
+# From this exercise we can see that the regression may be simple, but is very comuputational intensive if we use a larger number of periods and/or agents. Unfortunately, we need a large number of both to receive estimates which are close to the true values. Here, given a sufficient large number of time periods, an increase in the agent count is particularly crucial to reduce the difference between estimated and true parameter.
 
 # %%
