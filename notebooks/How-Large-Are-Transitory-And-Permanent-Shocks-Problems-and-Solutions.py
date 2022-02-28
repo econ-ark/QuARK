@@ -215,21 +215,20 @@ print('The number of periods is ' + str(Test1.T_sim))
 print('The number of agents is ' + str(Test1.AgentCount))
 
 # %%
-plt.plot(Test1.history['pLvl'][0:20,0:9])
+# We are given Test1.history['pLvl'][:,:], 
+# where the first component is the agent's actual income across Test1.T_sim periods
+# and the second component is the agent's index number given Test1.AgentCount agents
+
+pLvlhist = np.log(Test1.history['pLvl'])
+
+# %%
+plt.plot(pLvlhist[0:50,0:9])
 plt.xlabel('Time')
 plt.ylabel('Log Permanent Income')
 plt.show()
 
 # %%
-# We are given Test1.history['pLvl'][:,:], 
-# where the first component is the agent's consumption history across Test1.T_sim periods
-# and the second component is the agent's index number given Test1.AgentCount agents
-
-pLvlhist = Test1.history['pLvl']
-pLvlhist[:,0]
-
-# %%
-# Now, generate the following dataset:
+# Now, I generate the following dataset:
 # 1. pLvldiff: Square of difference of period-(t+d) and period-t log permanent incomes of agent i (y_i,t+d - y_i,t)
 # 2. lag: list of d's (number of periods between t and t+d)
 # 3. constant term (vector of ones)
@@ -239,9 +238,9 @@ pLvldiff = []
 lag = []
 minlag = 3
 
-for i in np.arange(Test1.AgentCount):
-    for s in np.arange(Test1.T_sim):
-        for d in np.arange(minlag,Test1.T_sim-s):
+for i in range(Test1.AgentCount):
+    for s in range(Test1.T_sim):
+        for d in range(minlag,Test1.T_sim-s):
             pLvldiffsq = (pLvlhist[s+d,i] - pLvlhist[s,i])**2
             pLvldiff.extend([pLvldiffsq])
             lag.extend([d])

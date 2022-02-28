@@ -315,9 +315,18 @@ interact(makeTBSplot,
 
 # %%
 # Computing betaMax from the formula given in the TBS paper
-betaMax = (MyTBStype.PermGroFac**MyTBStype.CRRA) * ((1-MyTBStype.UnempPrb)**(-MyTBStype.CRRA)) / MyTBStype.Rfree
+
+rho = MyTBStype.CRRA
+beta = MyTBStype.DiscFac
+G = MyTBStype.PermGroFac
+R = MyTBStype.Rfree
+UnempPrb = MyTBStype.UnempPrb
+Phi = G / (1-UnempPrb)
+
+betaMax = Phi**rho / (R*(1-UnempPrb))
 print('betaMax equals ' + str(betaMax))
 
+# %%
 # Coding a separate Discount Factor widget
 DiscFac_widget2 = widgets.FloatSlider(
     min= MyTBStype.DiscFac - 0.05,
