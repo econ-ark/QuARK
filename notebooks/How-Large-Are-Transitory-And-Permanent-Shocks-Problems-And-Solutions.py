@@ -39,6 +39,8 @@ import numpy as np
 import HARK
 from copy import deepcopy
 from HARK.utilities import plot_funcs
+import statsmodels.api as sm
+import statsmodels.formula.api as smf
 
 # %% [markdown]
 # ## Income Process With Transitory and Permanent Shocks
@@ -135,3 +137,95 @@ from HARK.utilities import plot_funcs
 #    * Use the default parameter values 
 # 1. Use the method above to calculate simulated 'empirical' estimates of the magnitude of the shocks
 #    * Experiment to determine how large a population of consumers, and how long a span of time, you need to correctly recover the 'true' parameter values for the income process
+
+# %%
+# Choose some calibrated parameters that roughly match steady state 
+init_infinite = {
+    "CRRA":1.0,                    # Coefficient of relative risk aversion 
+    "Rfree":1.01/(1.0 - 1.0/240.0), # Survival probability,
+    "PermGroFac":[1.000**0.25], # Permanent income growth factor (no perm growth),
+    "PermGroFacAgg":1.0,
+    "BoroCnstArt":0.0,
+    "CubicBool":False,
+    "vFuncBool":False,
+    "PermShkStd":[(0.01*4/11)**0.5],  # Standard deviation of permanent shocks to income
+    "PermShkCount":7,  # Number of points in permanent income shock grid
+    "TranShkStd":[(0.01*4)**0.5],  # Standard deviation of transitory shocks to income,
+    "TranShkCount":5,  # Number of points in transitory income shock grid
+    "UnempPrb":0.07,  # Probability of unemployment while working
+    "IncUnemp":0.15,  # Unemployment benefit replacement rate
+    "UnempPrbRet":0.07,
+    "IncUnempRet":0.15,
+    "aXtraMin":0.00001,  # Minimum end-of-period assets in grid
+    "aXtraMax":20,  # Maximum end-of-period assets in grid
+    "aXtraCount":20,  # Number of points in assets grid,
+    "aXtraExtra":[None],
+    "aXtraNestFac":3,  # Number of times to 'exponentially nest' when constructing assets grid
+    "LivPrb":[1.0 - 1.0/240.0],  # Survival probability
+    "DiscFac":0.97,             # Default intertemporal discount factor, # dummy value, will be overwritten
+    "cycles":0,
+    "T_cycle":1,
+    "T_retire":0,
+    'T_sim':2000,  # Number of periods to simulate (idiosyncratic shocks model, perpetual youth)
+    'T_age':1000,
+    'IndL': 10.0/9.0,  # Labor supply per individual (constant),
+    'aNrmInitMean':np.log(0.00001),
+    'aNrmInitStd':0.0,
+    'pLvlInitMean':0.0,
+    'pLvlInitStd':0.0,
+    'AgentCount':100,
+}
+
+# %%
+from HARK.ConsumptionSaving.ConsIndShockModel import IndShockConsumerType
+ConsumerType = IndShockConsumerType(**init_infinite)
+
+# %%
+#Solution:
+#Controlling the time horizon over which we estimate the transitory and permanent shocks:
+ConsumerType.T_sim = 100
+
+#Setting up and simulating the agents' behavior:
+ConsumerType.solve(verbose=False)
+ConsumerType.track_vars = ['pLvl']
+ConsumerType.initialize_sim()
+
+ConsumerType.simulate()
+
+SimulatedIncome = np.log(ConsumerType.history['pLvl'])
+#print(np.shape(SimulatedIncome))   #Just to check the shape of the matrix
+
+d = []
+y = []
+
+
+for i in range(ConsumerType.AgentCount):
+    for n in range(ConsumerType.T_sim -1):
+        for j in range(ConsumerType.T_sim-n-1):
+            Aux1 = (SimulatedIncome[j+n+1,i]- SimulatedIncome[j,i])**2
+            y.append(Aux1)
+            Aux2 = n+1
+            d.append(Aux2)
+            
+
+x = d
+x = sm.add_constant(x)
+model = sm.OLS(y,x)
+results = model.fit()
+results.params
+
+print(results.summary())
+
+
+
+# %%
+#Comparing our esimation results with the actual standard deviations in the model:
+print('The variance of the transitory shock Theta in the model is given by ' + str(ConsumerType.TranShkStd)+ ' where the empirical estimate gives us '+str(np.sqrt(results.params[0]/2)))
+print('The variance of the permanent shock Psi in the model is given by ' + str(ConsumerType.PermShkStd)+ ' where the empirical estimate gives us '+str(np.sqrt(results.params[1])))
+
+# %% [markdown]
+# The estimator for the standard deviation of the permanent shock reaped from the coefficient in front of the time difference 'd' is already relativly close to its true value, but the estimation of the transitory shock, garnered from the estimation of the constant in our regression is way too small though. Increasing the agent count did not remedy the problem in a significant way. But increasing the time horizon for teh observations helps tremenduously in overcoming the bias to the constant (i.e. Std of transitory shocks), but it also increased the downward bias to the slope coefficient (i.e. our estimate of Std of permanent shocks).  
+#
+# My interpretation of this finding is that increasing time, increases the spread in agents permanent income levels, which biases the perception of the slope of the equation. To balance out this bias the constant gets biased in the opposite direction. This is particularly true for small numbers of agents. But I am not entirely satisfied with the result, as it strains against the theory discussed before the statement of the problem. I am looking forward to hear your opinion and see what we did wrong in our code.
+
+# %%
