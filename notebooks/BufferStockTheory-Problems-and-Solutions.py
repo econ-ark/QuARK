@@ -69,7 +69,7 @@
 # %% [markdown]
 # `# Setup Python Below`
 
-# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# %% {"tags": []}
 # Import required python packages
 import os.path
 import sys
@@ -97,7 +97,7 @@ if os.path.isdir('binder'):  # Folder defining requirements exists
 # %% [markdown]
 # `# Setup HARK Below`
 
-# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# %% {"tags": []}
 from HARK import __version__ as HARKversion
 from HARK.utilities import (
     plot_funcs, find_gui, make_figs, determine_platform,
@@ -279,7 +279,7 @@ base_params['TranShkStd'] = [0.1]          # Standard deviation of log transitor
 # %% [markdown]
 # `# Create a buffer stock consumer instance:`
 
-# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# %% {"tags": []}
 # Create a buffer stock consumer instance by invoking the IndShockConsumerType class
 # with the parameter dictionary "base_params"
 
@@ -298,7 +298,7 @@ cFunc = baseAgent_Fin.cFunc    # Shortcut
 # %% [markdown]
 # `# Plot the consumption rules:`
 
-# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# %% {"tags": []}
 # Plot the different consumption rules for the different periods
 
 mPlotMin = 0

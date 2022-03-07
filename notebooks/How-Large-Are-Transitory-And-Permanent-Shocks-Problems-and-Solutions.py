@@ -155,13 +155,17 @@ init_infinite = {
     "BoroCnstArt":0.0,
     "CubicBool":False,
     "vFuncBool":False,
-    "PermShkStd":[(0.01*4/11)**0.5],  # Standard deviation of permanent shocks to income
+    #"PermShkStd":[(0.01*4/11)**0.5],  # Standard deviation of permanent shocks to income
+    "PermShkStd":[0.1],
     "PermShkCount":7,  # Number of points in permanent income shock grid
-    "TranShkStd":[(0.01*4)**0.5],  # Standard deviation of transitory shocks to income,
+    #"TranShkStd":[(0.01*4)**0.5],  # Standard deviation of transitory shocks to income,
+    "TranShkStd": [0.1],
     "TranShkCount":5,  # Number of points in transitory income shock grid
-    "UnempPrb":0.07,  # Probability of unemployment while working
+    #"UnempPrb":0.07,  # Probability of unemployment while working
+    "UnempPrb":0.0,
     "IncUnemp":0.15,  # Unemployment benefit replacement rate
-    "UnempPrbRet":0.07,
+    #"UnempPrbRet":0.07,
+    "UnempPrbRet":0.0,
     "IncUnempRet":0.15,
     "aXtraMin":0.00001,  # Minimum end-of-period assets in grid
     "aXtraMax":20,  # Maximum end-of-period assets in grid
@@ -187,17 +191,20 @@ init_infinite = {
 # b) Create Consumers
 from HARK.ConsumptionSaving.ConsIndShockModel import IndShockConsumerType
 BaselineType = IndShockConsumerType(**init_infinite)
-T_sim = 800
-AgentCount = 500
+T_sim = 5
+AgentCount = 10000
+PermShkStd = 0
 BaselineType.T_sim = T_sim
 BaselineType.AgentCount = AgentCount
 
 # %%
 # c) Solve
+#BaselineType.update_incomeshock
+BaselineType.update_income_process()
 BaselineType.solve(verbose=False)
 # d) Simulate
-BaselineType.initialize_sim()
-BaselineType.simulate()
+# BaselineType.initialize_sim()
+# BaselineType.simulate()
 
 # %% [markdown]
 # #### 2. Use the method above to calculate simulated 'empirical' estimates of the magnitude of the shocks
@@ -205,7 +212,7 @@ BaselineType.simulate()
 # %%
 # a) Calculate the d-period difference of income for each consumer
 # We want to track total income for each individual in each period
-BaselineType.track_vars = ['pLvl']# ['aNrm','mNrm','cNrm','pLvl']
+BaselineType.track_vars = ['pLvl', 'TranShk']# ['aNrm','mNrm','cNrm','pLvl']
 BaselineType.initialize_sim()
 BaselineType.simulate()
 
@@ -216,12 +223,12 @@ BaselineType.simulate()
 
 # %%
 # Take the difference within each array and square it
-Inc = np.log(BaselineType.history['pLvl'])
+Inc = np.log(BaselineType.history['pLvl']* BaselineType.history['TranShk'])
 Inc.shape # period x agent count
 Y = []
 D = []
 
-
+# n = 2
 for i in range(AgentCount): # For each agent
     for n in range(T_sim-1): # t-1 differences
         for j in range(T_sim - n - 1): # period
@@ -229,6 +236,12 @@ for i in range(AgentCount): # For each agent
             Y.append(Y_aux)
             D_aux = n + 1
             D.append(D_aux)
+# for i in range(AgentCount): # For each agent
+#     for j in range(T_sim - n - 1): # period
+#         Y_aux = (Inc[j+n+1, i] - Inc[j , i])**2
+#         Y.append(Y_aux)
+#         D_aux = n + 1
+#         D.append(D_aux)
 
 # %%
 X = D
@@ -236,6 +249,9 @@ X = sm.add_constant(X)
 model = sm.OLS(Y,X)
 results = model.fit()
 results.params
+
+# %%
+np.mean(Y)
 
 # %%
 sd_psi = np.sqrt(results.params[1])
@@ -249,6 +265,8 @@ print(init_infinite['PermShkStd'], init_infinite['TranShkStd'])
 
 
 # %%
+
+# %%
 def Regression(Type,T_sim,AgentCount):
     Type = IndShockConsumerType(**init_infinite)
     # a)
@@ -256,15 +274,16 @@ def Regression(Type,T_sim,AgentCount):
     Type.AgentCount = AgentCount
     
     # b) Solve
+    Type.update_income_process()
     Type.solve(verbose=False)
     # c) Simulate
-    Type.track_vars = ['pLvl']# ['aNrm','mNrm','cNrm','pLvl']
+    Type.track_vars = ['pLvl', 'TranShk']# ['aNrm','mNrm','cNrm','pLvl']
     Type.initialize_sim()
     Type.simulate()
     
     # Calculate variables
     # Take the difference within each array and square it
-    Inc = np.log(Type.history['pLvl'])
+    Inc = np.log(Type.history['pLvl']* Type.history['TranShk'])
     Y = []
     D = []
 
@@ -285,8 +304,8 @@ def Regression(Type,T_sim,AgentCount):
     sd_psi = np.sqrt(results.params[1])
     sd_theta = np.sqrt(results.params[0]/2)
 
-    diff_sd_psi = init_infinite['PermShkStd'] - sd_psi
-    diff_sd_theta = init_infinite['TranShkStd'] - sd_theta
+    diff_sd_psi = init_infinite['PermShkStd'] - sd_psi #init_infinite['PermShkStd']**2 - results.params[1]
+    diff_sd_theta = init_infinite['TranShkStd'] - sd_theta #(init_infinite['TranShkStd']*2)**2 - results.params[0] #
     
     return  {"sd_psi": sd_psi,
             "sd_theta": sd_theta, 
@@ -298,14 +317,14 @@ def Regression(Type,T_sim,AgentCount):
 # Let's try it
 BaselineType = IndShockConsumerType(**init_infinite)
 # for
-T = [10, 100, 200, 300, 400, 800]
-A = [50, 100, 200, 300, 400, 500]
+T = [3, 5, 10, 20]
+A = [100, 500, 1000, 1500, 2000, 5000, 10000, 15000]
 
 D_sd_psi_time = []
 D_sd_theta_time = []
 
 for i in T:
-    stats_est= Regression(BaselineType, i, 300) # baseline with 300 agents
+    stats_est= Regression(BaselineType, i, 10000) # baseline with 1000 agents
     D_sd_psi_time.append(stats_est['diff_sd_psi']) 
     D_sd_theta_time.append(stats_est['diff_sd_theta'])
 
@@ -314,7 +333,7 @@ D_sd_psi_agents = []
 D_sd_theta_agents = []
 
 for i in A:
-    stats_est= Regression(BaselineType, 300, i) # baseline with 300 periods
+    stats_est= Regression(BaselineType, 5, i) # baseline with 5 periods
     D_sd_psi_agents.append(stats_est['diff_sd_psi']) 
     D_sd_theta_agents.append(stats_est['diff_sd_theta'])
 
@@ -322,25 +341,25 @@ for i in A:
 # let's plot them
 # persistent and time
 plt.plot(T,D_sd_psi_time,'--k')
-plt.title('Sigma Psi Difference for AgentCount = 300')
+plt.title('Sigma Psi Difference for AgentCount = 10000')
 plt.xlabel('Time Periods')
 plt.ylabel('Difference to true value')
 plt.show(block=False)
 
 plt.plot(T,D_sd_theta_time,'--k')
-plt.title('Sigma Theta Difference for AgentCount = 300')
+plt.title('Sigma Theta Difference for AgentCount = 10000')
 plt.xlabel('Time Periods')
 plt.ylabel('Difference to true value')
 plt.show(block=False)
 
 plt.plot(A,D_sd_psi_agents,'--k')
-plt.title('Sigma Psi Difference for Time = 300')
+plt.title('Sigma Psi Difference for Time = 5')
 plt.xlabel('AgentCount')
 plt.ylabel('Difference to true value')
 plt.show(block=False)
 
 plt.plot(A,D_sd_theta_agents,'--k')
-plt.title('Sigma Theta Difference for Time = 300')
+plt.title('Sigma Theta Difference for Time = 5')
 plt.xlabel('AgentCount')
 plt.ylabel('Difference to true value')
 plt.show(block=False)
@@ -349,5 +368,7 @@ plt.show(block=False)
 # %% [markdown]
 # ### Discussion
 # From this exercise we can see that the regression may be simple, but is very comuputational intensive if we use a larger number of periods and/or agents. Unfortunately, we need a large number of both to receive estimates which are close to the true values. Here, given a sufficient large number of time periods, an increase in the agent count is particularly crucial to reduce the difference between estimated and true parameter.
+
+# %%
 
 # %%
