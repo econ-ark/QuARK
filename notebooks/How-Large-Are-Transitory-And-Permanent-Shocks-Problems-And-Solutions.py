@@ -149,10 +149,12 @@ init_infinite = {
     "CubicBool":False,
     "vFuncBool":False,
     "PermShkStd":[(0.01*4/11)**0.5],  # Standard deviation of permanent shocks to income
+    #"PermShkStd":[0.0],  # No permanent shocks to income
     "PermShkCount":7,  # Number of points in permanent income shock grid
     "TranShkStd":[(0.01*4)**0.5],  # Standard deviation of transitory shocks to income,
+    #"TranShkStd":[0.0],  # No transitory shocks to income,
     "TranShkCount":5,  # Number of points in transitory income shock grid
-    "UnempPrb":0.07,  # Probability of unemployment while working
+    "UnempPrb":0.0,  # Probability of unemployment while working
     "IncUnemp":0.15,  # Unemployment benefit replacement rate
     "UnempPrbRet":0.07,
     "IncUnempRet":0.15,
@@ -161,7 +163,8 @@ init_infinite = {
     "aXtraCount":20,  # Number of points in assets grid,
     "aXtraExtra":[None],
     "aXtraNestFac":3,  # Number of times to 'exponentially nest' when constructing assets grid
-    "LivPrb":[1.0 - 1.0/240.0],  # Survival probability
+    #"LivPrb":[1.0 - 1.0/240.0],  # Survival probability
+    "LivPrb": [1.0],   #Infinitely living agents
     "DiscFac":0.97,             # Default intertemporal discount factor, # dummy value, will be overwritten
     "cycles":0,
     "T_cycle":1,
@@ -173,7 +176,7 @@ init_infinite = {
     'aNrmInitStd':0.0,
     'pLvlInitMean':0.0,
     'pLvlInitStd':0.0,
-    'AgentCount':100,
+    'AgentCount':2000,
 }
 
 # %%
@@ -183,26 +186,41 @@ ConsumerType = IndShockConsumerType(**init_infinite)
 # %%
 #Solution:
 #Controlling the time horizon over which we estimate the transitory and permanent shocks:
-ConsumerType.T_sim = 100
+ConsumerType.T_sim = 10
 
 #Setting up and simulating the agents' behavior:
 ConsumerType.solve(verbose=False)
-ConsumerType.track_vars = ['pLvl']
+ConsumerType.track_vars = ['pLvl', 'TranShk', 'PermShk']
 ConsumerType.initialize_sim()
 
 ConsumerType.simulate()
 
-SimulatedIncome = np.log(ConsumerType.history['pLvl'])
+SimulatedPermIncome = np.log(ConsumerType.history['pLvl'])
+SimulatedTranShocks = np.log(ConsumerType.history['TranShk'])
+SimulatedPermShocks = np.log(ConsumerType.history['PermShk'])
+
+
+SimulatedIncome = SimulatedPermIncome + SimulatedTranShocks
 #print(np.shape(SimulatedIncome))   #Just to check the shape of the matrix
 
+
+
+#plt.plot(range(ConsumerType.T_sim), SimulatedIncome)
+#plt.xlabel('Time t')
+#plt.ylabel('Simulated Income')
+#plt.show(block=False)
+
+#print(SimulatedPermIncome)
+
+# %%
 d = []
 y = []
-
+minlag =3
 
 for i in range(ConsumerType.AgentCount):
-    for n in range(ConsumerType.T_sim -1):
-        for j in range(ConsumerType.T_sim-n-1):
-            Aux1 = (SimulatedIncome[j+n+1,i]- SimulatedIncome[j,i])**2
+    for n in range(minlag, ConsumerType.T_sim-1):
+        for j in range(ConsumerType.T_sim-n-2):
+            Aux1 = (SimulatedIncome[j+n+1,i]- SimulatedIncome[j+1,i])**2
             y.append(Aux1)
             Aux2 = n+1
             d.append(Aux2)
@@ -215,8 +233,6 @@ results = model.fit()
 results.params
 
 print(results.summary())
-
-
 
 # %%
 #Comparing our esimation results with the actual standard deviations in the model:
