@@ -43,16 +43,17 @@
 # ---
 
 # %% [markdown]
-# # How Large Are Transitory and Permanent Shocks?
+# # How Large Are Transitory and Permanent Shocks? - Solutions
 #
 # This notebook illustrates a simple method for measuring the size of transitory and permanent shocks for a set of households whose incomes are subject to those kinds of shocks
 
 # %% {"code_folding": []}
 # This cell has a bit of initial setup.
 # You should substitute whatever setup you might need to address the questions below
+# Import IndShockConsumerType
+from HARK.ConsumptionSaving.ConsIndShockModel import IndShockConsumerType
 import matplotlib.pyplot as plt
 import numpy as np
-import HARK
 from copy import deepcopy
 from HARK.utilities import plot_funcs
 import statsmodels.api as sm
@@ -156,39 +157,40 @@ import statsmodels.api as sm
 # %% [markdown]
 # The predicted coefficient for the number of lags, which estimates the variance of the permanent income shock, is approximately 0.0036 given the default parameters.
 #
-# I recover the variance of the permanent income shock ('PermShkVar') within 10\% of the predicted number (0.0032) with 10,000 agents ('AgentCount' = 10000) simulated over 100 periods ('T_sim' = 100). However, for some reason the relevant coefficient seems to increase with the number of agents.
+# I recover the variance of the permanent income shock ('PermShkVar') within 10\% of the predicted number (0.0032) with 1,000 agents ('AgentCount' = 10000) simulated over 100 periods ('T_sim' = 100).
 #
 # The predicted coefficient for the constant term, which estimates the variance of the permanent income shock multiplied by 2, is approximately 0.08 given the default parameters.
 #
-# I recover the variance of the transitory income shock, 'TranShkVar' * 2, to a coefficient of 0.085 with 1,000 agents ('AgentCount' = 1000) simulated over 125 periods ('T_sim' = 125). However, for some reason the constant coefficient seems to increase with the number of simulated periods.
+# I recover the variance of the transitory income shock, 'TranShkVar' * 2, to a coefficient of 0.071 with 1,000 agents ('AgentCount' = 1000) simulated over 100 periods ('T_sim' = 100).
 
 # %%
-# Import IndShockConsumerType
-from HARK.ConsumptionSaving.ConsIndShockModel import IndShockConsumerType
-
 # Define a dictionary with calibrated parameters
 parameters = {
     "CRRA":1.0,                    # Coefficient of relative risk aversion 
-    "Rfree":1.01/(1.0 - 1.0/160.0), # Survival probability,
+    "Rfree":1.01/(1.0), # Survival probability
+    #"Rfree":1.01/(1.0 - 1.0/160.0), # Survival probability,
     "PermGroFac":[1.000**0.25], # Permanent income growth factor (no perm growth),
     "PermGroFacAgg":1.0,
     "BoroCnstArt":0.0,
     "CubicBool":False,
     "vFuncBool":False,
+    #"PermShkStd":[0.0],  # Standard deviation of permanent shocks to income
     "PermShkStd":[(0.01*4/11)**0.5],  # Standard deviation of permanent shocks to income
     "PermShkCount":5,  # Number of points in permanent income shock grid
+    #"TranShkStd":[0.0],  # Standard deviation of transitory shocks to income,
     "TranShkStd":[(0.01*4)**0.5],  # Standard deviation of transitory shocks to income,
     "TranShkCount":5,  # Number of points in transitory income shock grid
-    "UnempPrb":0.07,  # Probability of unemployment while working
-    "IncUnemp":0.15,  # Unemployment benefit replacement rate
-    "UnempPrbRet":0.07,
-    "IncUnempRet":0.15,
+    "UnempPrb":0.00,  # Probability of unemployment while working
+    "IncUnemp":0.00,  # Unemployment benefit replacement rate
+    "UnempPrbRet":0.00,
+    "IncUnempRet":0.00,
     "aXtraMin":0.00001,  # Minimum end-of-period assets in grid
     "aXtraMax":40,  # Maximum end-of-period assets in grid
     "aXtraCount":32,  # Number of points in assets grid
     "aXtraExtra":[None],
     "aXtraNestFac":3,  # Number of times to 'exponentially nest' when constructing assets grid
-    "LivPrb":[1.0 - 1.0/160.0],  # Survival probability
+    "LivPrb":[1.0],  # Survival probability
+    # "LivPrb":[1.0 - 1.0/160.0],  # Survival probability
     "DiscFac":0.97,             # Default intertemporal discount factor; dummy value, will be overwritten
     "cycles":0,
     "T_cycle":1,
@@ -203,14 +205,14 @@ parameters = {
     'AgentCount':1000
 }
 
-# %%
+# %% {"tags": []}
 Test1 = IndShockConsumerType(**parameters)
 Test1.solve()
-Test1.track_vars = ['pLvl']
+Test1.track_vars = ['pLvl','TranShk']
 Test1.initialize_sim()
 Test1.simulate()
 
-# %%
+# %% {"tags": []}
 print('The number of periods is ' + str(Test1.T_sim))
 print('The number of agents is ' + str(Test1.AgentCount))
 
@@ -219,40 +221,53 @@ print('The number of agents is ' + str(Test1.AgentCount))
 # where the first component is the agent's actual income across Test1.T_sim periods
 # and the second component is the agent's index number given Test1.AgentCount agents
 
-pLvlhist = np.log(Test1.history['pLvl'])
+pLvlHist = np.log(Test1.history['pLvl'])
+TranShkHist = np.log(Test1.history['TranShk'])
+IncHist = pLvlHist + TranShkHist
 
 # %%
-plt.plot(pLvlhist[0:50,0:9])
+plt.plot(pLvlHist[0:50,0:5])
 plt.xlabel('Time')
 plt.ylabel('Log Permanent Income')
 plt.show()
 
 # %%
-# Now, I generate the following dataset:
-# 1. pLvldiff: Square of difference of period-(t+d) and period-t log permanent incomes of agent i (y_i,t+d - y_i,t)
-# 2. lag: list of d's (number of periods between t and t+d)
-# 3. constant term (vector of ones)
-# As prescripted above, I set a minimum number of lags at 3 periods (minlag = 3)
+plt.plot(TranShkHist[0:50,0:5])
+plt.xlabel('Time')
+plt.ylabel('Log Transitory Shock')
+plt.show()
 
-pLvldiff = []
-lag = []
+# %%
+plt.plot(IncHist[0:50,0:5])
+plt.xlabel('Time')
+plt.ylabel('Log Actual Income')
+plt.show()
+
+# %%
+# Now, I generate the following dataset:
+# 1. Incdiff: Square of difference of period-(t+d) and period-t log permanent incomes of agent i (y_i,t+d - y_i,t)
+# 2. lags: list of d's (number of periods between t and t+d)
+# 3. constant term (vector of ones)
+# As prescribed above, I set a minimum number of lags at 3 periods (minlag = 3)
+
+Incdiff = []
+lags = []
 minlag = 3
 
 for i in range(Test1.AgentCount):
     for s in range(Test1.T_sim):
         for d in range(minlag,Test1.T_sim-s):
-            pLvldiffsq = (pLvlhist[s+d,i] - pLvlhist[s,i])**2
-            pLvldiff.extend([pLvldiffsq])
-            lag.extend([d])
+            Incdiffsq = (IncHist[s+d,i] - IncHist[s,i])**2
+            Incdiff.extend([Incdiffsq])
+            lags.extend([d])
 
 # %%
-np.size(pLvldiff), np.size(lag), np.size(np.ones(len(pLvldiff)))
+np.size(Incdiff), np.size(lags), np.size(np.ones(len(Incdiff)))
 
-# %%
+# %% {"tags": []}
 # OLS regression of exogenous variables (lag "d" and constant term) on endogenous variable (pLvldiff)
-y = np.transpose(pLvldiff)
-X = np.transpose([lag, np.ones(len(pLvldiff))])
-#X = sm.add_constant(X, prepend=False)
+y = np.transpose(Incdiff)
+X = np.transpose([lags, np.ones(len(Incdiff))])
 mod = sm.OLS(y,X)
 res = mod.fit()
 print(res.summary())
