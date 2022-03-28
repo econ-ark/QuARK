@@ -2,7 +2,7 @@
 # ---
 # jupyter:
 #   jupytext:
-#     cell_metadata_filter: ExecuteTime,collapsed,jp-MarkdownHeadingCollapsed,slideshow,pycharm,heading_collapsed,jupyter,tags,-autoscroll
+#     cell_metadata_filter: ExecuteTime,collapsed,slideshow,jupyter,tags,pycharm,jp-MarkdownHeadingCollapsed,heading_collapsed,-autoscroll
 #     cell_metadata_json: true
 #     formats: ipynb,py:percent
 #     notebook_metadata_filter: all,-widgets,-varInspector
@@ -97,7 +97,7 @@ if os.path.isdir('binder'):  # Folder defining requirements exists
 # %% [markdown]
 # `# Setup HARK Below`
 
-# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# %% {"tags": []}
 from HARK import __version__ as HARKversion
 from HARK.utilities import (
     plot_funcs, find_gui, make_figs, determine_platform,
@@ -279,7 +279,7 @@ base_params['TranShkStd'] = [0.1]          # Standard deviation of log transitor
 # %% [markdown]
 # `# Create a buffer stock consumer instance:`
 
-# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# %% {"tags": []}
 # Create a buffer stock consumer instance by invoking the IndShockConsumerType class
 # with the parameter dictionary "base_params"
 
@@ -298,7 +298,7 @@ cFunc = baseAgent_Fin.cFunc    # Shortcut
 # %% [markdown]
 # `# Plot the consumption rules:`
 
-# %% {"jupyter": {"source_hidden": true}, "tags": []}
+# %% {"tags": []}
 # Plot the different consumption rules for the different periods
 
 mPlotMin = 0
@@ -362,6 +362,47 @@ makeFig('cFuncsConverge')  # Comment out if you want to run uninterrupted
 #          * `from HARK.utilities import plot_funcs_der, plot_funcs`
 #
 # Create a cell or cells in the notebook below this cell and put your solution there; comment on the size of $\UnempPrb$ needed to make the two models visually indistinguishable
+
+# %%
+from HARK.utilities import plot_funcs_der, plot_funcs
+
+#cFuncList = list()
+# update income process
+
+# Modify base_params
+# no uncertainty
+# no 
+
+TwoPeriodModel = IndShockConsumerType(**base_params)
+TwoPeriodModel.cycles = 2   # Make this type have a two period horizon (Set T = 2)
+TwoPeriodModel.solve()
+
+#cFuncList.append(TwoPeriodModel.solution[0].cFunc[-2])
+
+# Change unemployment probability: baseline 0.005
+TwoPeriodModel_1 = deepcopy(TwoPeriodModel)
+TwoPeriodModel_1.𝚄𝚗𝚎𝚖𝚙𝙿𝚛𝚋 = 0.006
+TwoPeriodModel_1.solve()
+
+TwoPeriodModel_2 = deepcopy(TwoPeriodModel)
+TwoPeriodModel_2.𝚄𝚗𝚎𝚖𝚙𝙿𝚛𝚋 = 0.007
+TwoPeriodModel_2.solve()
+
+TwoPeriodModel_3 = deepcopy(TwoPeriodModel)
+TwoPeriodModel_3.𝚄𝚗𝚎𝚖𝚙𝙿𝚛𝚋 = 0.02
+TwoPeriodModel_3.solve()
+
+TwoPeriodModel_4 = deepcopy(TwoPeriodModel)
+TwoPeriodModel_4.𝚄𝚗𝚎𝚖𝚙𝙿𝚛𝚋 = 0.00
+TwoPeriodModel_4.solve()
+
+#mPlotBottom = TwoPeriodModel.solution[0].mNrmMin
+plot_funcs([TwoPeriodModel.solution[0].cFunc,TwoPeriodModel_1.solution[0].cFunc,TwoPeriodModel_2.solution[0].cFunc,TwoPeriodModel_3.solution[0].cFunc,TwoPeriodModel_4.solution[0].cFunc],0.,3.)#mPlotBottom,mPlotTop)
+
+# %% [markdown]
+# #### Explanation
+# approach to 0 is not 0. Still precautionary motive: natural borrowing constraint by utility function (consuming 0 gives -infinity).
+# If it approaches 0, borrowing constraint gets smaller
 
 # %% [markdown] {"tags": []}
 # ## Factors and Conditions
