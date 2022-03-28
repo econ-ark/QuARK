@@ -110,7 +110,7 @@ import statsmodels.api as sm
 # \begin{align}
 #   (\Delta^{d}y)^{2}_{i} & = \eta_{0} + d \eta_{1}
 # \end{align}
-# where $\nu_{1} = \sigma^{2}_{\psi}$ and $\nu_{0} = 2 \sigma^{2}_{\theta}$.
+# where $\eta_{1} = \sigma^{2}_{\psi}$ and $\eta_{0} = 2 \sigma^{2}_{\theta}$.
 #
 #
 # ### The Intuition
@@ -149,31 +149,35 @@ import statsmodels.api as sm
 # Choose some calibrated parameters that roughly match steady state 
 init_infinite = {
     "CRRA":1.0,                    # Coefficient of relative risk aversion 
-    "Rfree":1.01/(1.0 - 1.0/240.0), # Survival probability,
+    #"Rfree":1.01/(1.0 - 1.0/240.0), # Survival probability,
+    "Rfree":1.00,
     "PermGroFac":[1.000**0.25], # Permanent income growth factor (no perm growth),
     "PermGroFacAgg":1.0,
     "BoroCnstArt":0.0,
     "CubicBool":False,
     "vFuncBool":False,
-    #"PermShkStd":[(0.01*4/11)**0.5],  # Standard deviation of permanent shocks to income
-    "PermShkStd":[0.1],
+    "PermShkStd":[(0.01*4/11)**0.5],  # Standard deviation of permanent shocks to income
+    #"PermShkStd":[0.0],
     "PermShkCount":7,  # Number of points in permanent income shock grid
-    #"TranShkStd":[(0.01*4)**0.5],  # Standard deviation of transitory shocks to income,
-    "TranShkStd": [0.1],
+    "TranShkStd":[(0.01*4)**0.5],  # Standard deviation of transitory shocks to income,
+    #"TranShkStd": [0.0],
     "TranShkCount":5,  # Number of points in transitory income shock grid
     #"UnempPrb":0.07,  # Probability of unemployment while working
     "UnempPrb":0.0,
     "IncUnemp":0.15,  # Unemployment benefit replacement rate
     #"UnempPrbRet":0.07,
     "UnempPrbRet":0.0,
-    "IncUnempRet":0.15,
+    #"IncUnempRet":0.15,
+    "IncUnempRet":0.00,
     "aXtraMin":0.00001,  # Minimum end-of-period assets in grid
     "aXtraMax":20,  # Maximum end-of-period assets in grid
     "aXtraCount":20,  # Number of points in assets grid,
     "aXtraExtra":[None],
     "aXtraNestFac":3,  # Number of times to 'exponentially nest' when constructing assets grid
-    "LivPrb":[1.0 - 1.0/240.0],  # Survival probability
+    #"LivPrb":[1.0 - 1.0/240.0],  # Survival probability
+    "LivPrb": [1.0],
     "DiscFac":0.97,             # Default intertemporal discount factor, # dummy value, will be overwritten
+    #"DiscFac":1.00,
     "cycles":0,
     "T_cycle":1,
     "T_retire":0,
@@ -189,22 +193,17 @@ init_infinite = {
 
 # %%
 # b) Create Consumers
-from HARK.ConsumptionSaving.ConsIndShockModel import IndShockConsumerType
 BaselineType = IndShockConsumerType(**init_infinite)
-T_sim = 5
-AgentCount = 10000
-PermShkStd = 0
+T_sim = 4
+AgentCount = 100000
 BaselineType.T_sim = T_sim
 BaselineType.AgentCount = AgentCount
+BaselineType.NewbornTransShk = True
 
 # %%
 # c) Solve
-#BaselineType.update_incomeshock
 BaselineType.update_income_process()
 BaselineType.solve(verbose=False)
-# d) Simulate
-# BaselineType.initialize_sim()
-# BaselineType.simulate()
 
 # %% [markdown]
 # #### 2. Use the method above to calculate simulated 'empirical' estimates of the magnitude of the shocks
@@ -212,23 +211,17 @@ BaselineType.solve(verbose=False)
 # %%
 # a) Calculate the d-period difference of income for each consumer
 # We want to track total income for each individual in each period
-BaselineType.track_vars = ['pLvl', 'TranShk']# ['aNrm','mNrm','cNrm','pLvl']
+BaselineType.track_vars = ['pLvl', 'TranShk','PermShk']# ['aNrm','mNrm','cNrm','pLvl']
 BaselineType.initialize_sim()
 BaselineType.simulate()
 
-# update_income_process()
-
-# %%
-# For each agent, take 1st, 2nd, .... T_sim differences
-
 # %%
 # Take the difference within each array and square it
-Inc = np.log(BaselineType.history['pLvl']* BaselineType.history['TranShk'])
-Inc.shape # period x agent count
+Inc = np.log(BaselineType.history['pLvl']* BaselineType.history['TranShk'])#* BaselineType.history['PermShk'])
 Y = []
 D = []
 
-# n = 2
+#n = 2
 for i in range(AgentCount): # For each agent
     for n in range(T_sim-1): # t-1 differences
         for j in range(T_sim - n - 1): # period
@@ -236,12 +229,7 @@ for i in range(AgentCount): # For each agent
             Y.append(Y_aux)
             D_aux = n + 1
             D.append(D_aux)
-# for i in range(AgentCount): # For each agent
-#     for j in range(T_sim - n - 1): # period
-#         Y_aux = (Inc[j+n+1, i] - Inc[j , i])**2
-#         Y.append(Y_aux)
-#         D_aux = n + 1
-#         D.append(D_aux)
+
 
 # %%
 X = D
@@ -251,20 +239,69 @@ results = model.fit()
 results.params
 
 # %%
-np.mean(Y)
-
-# %%
-sd_psi = np.sqrt(results.params[1])
-sd_theta = np.sqrt(results.params[0]/2)
+sd_psi = np.sqrt(abs(results.params[1]))
+sd_theta = np.sqrt(abs(results.params[0]/2))
 
 print(sd_psi, sd_theta)
+print("while the true ones are")
+print(init_infinite['PermShkStd'], init_infinite['TranShkStd'])
+
+# %% [markdown]
+# ### PROBLEM: Transitory shock only from period 2 and Permanent already in period 1
+# ### Solution: Transitory shock also in the first period. For this use option NewbornTransShk
 
 # %%
-# Compare with true parameters:
+from HARK.ConsumptionSaving.ConsIndShockModel_New import IndShockConsumerType # With option of Transitory Shocks
+TransShckType = IndShockConsumerType(**init_infinite)
+T_sim = 4
+AgentCount = 100000
+TransShckType.T_sim = T_sim
+TransShckType.AgentCount = AgentCount
+TransShckType.NewbornTransShk = True # New Parameters
+
+# Do the same steps as above:
+TransShckType.update_income_process()
+TransShckType.solve(verbose=False)
+
+TransShckType.track_vars = ['pLvl', 'TranShk','PermShk']# ['aNrm','mNrm','cNrm','pLvl']
+TransShckType.initialize_sim()
+TransShckType.simulate()
+
+
+# %%
+# Take the difference within each array and square it
+Inc = np.log(TransShckType.history['pLvl']* TransShckType.history['TranShk'])
+Y = []
+D = []
+
+for i in range(AgentCount): # For each agent
+    for n in range(T_sim-1): # t-1 differences
+        for j in range(T_sim - n - 1): # period
+            Y_aux = (Inc[j+n+1, i] - Inc[j , i])**2
+            Y.append(Y_aux)
+            D_aux = n + 1
+            D.append(D_aux)
+            
+X = D
+X = sm.add_constant(X)
+model = sm.OLS(Y,X)
+results = model.fit()
+results.params
+
+# %%
+sd_psi = np.sqrt(abs(results.params[1]))
+sd_theta = np.sqrt(abs(results.params[0]/2))
+
+print(sd_psi, sd_theta)
+print("while the true ones are")
 print(init_infinite['PermShkStd'], init_infinite['TranShkStd'])
 
 
-# %%
+# %% [markdown]
+# #### The bias got reduced!!
+
+# %% [markdown]
+# ### Simulate for a change in AgentCount and Time Periods
 
 # %%
 def Regression(Type,T_sim,AgentCount):
@@ -272,12 +309,12 @@ def Regression(Type,T_sim,AgentCount):
     # a)
     Type.T_sim = T_sim
     Type.AgentCount = AgentCount
-    
+    Type.NewbornTransShk = True
     # b) Solve
     Type.update_income_process()
     Type.solve(verbose=False)
     # c) Simulate
-    Type.track_vars = ['pLvl', 'TranShk']# ['aNrm','mNrm','cNrm','pLvl']
+    Type.track_vars = ['pLvl', 'TranShk','PermShk']
     Type.initialize_sim()
     Type.simulate()
     
@@ -293,19 +330,18 @@ def Regression(Type,T_sim,AgentCount):
                 Y_aux = (Inc[j+n+1, i] - Inc[j , i])**2
                 Y.append(Y_aux)
                 D_aux = n + 1
-                D.append(D_aux)
-                
+                D.append(D_aux)            
     X = D
     X = sm.add_constant(X)
     model = sm.OLS(Y,X)
     results = model.fit()
     results.params
     
-    sd_psi = np.sqrt(results.params[1])
-    sd_theta = np.sqrt(results.params[0]/2)
+    sd_psi = np.sqrt(abs(results.params[1]))
+    sd_theta = np.sqrt(abs(results.params[0]/2))
 
-    diff_sd_psi = init_infinite['PermShkStd'] - sd_psi #init_infinite['PermShkStd']**2 - results.params[1]
-    diff_sd_theta = init_infinite['TranShkStd'] - sd_theta #(init_infinite['TranShkStd']*2)**2 - results.params[0] #
+    diff_sd_psi = init_infinite['PermShkStd'] - sd_psi 
+    diff_sd_theta = init_infinite['TranShkStd'] - sd_theta
     
     return  {"sd_psi": sd_psi,
             "sd_theta": sd_theta, 
@@ -315,16 +351,16 @@ def Regression(Type,T_sim,AgentCount):
 
 # %%
 # Let's try it
-BaselineType = IndShockConsumerType(**init_infinite)
+TransShockType = IndShockConsumerType(**init_infinite)
 # for
 T = [3, 5, 10, 20]
-A = [100, 500, 1000, 1500, 2000, 5000, 10000, 15000]
+A = [100, 500, 1000, 1500, 2000, 5000, 10000, 15000, 20000]
 
 D_sd_psi_time = []
 D_sd_theta_time = []
 
 for i in T:
-    stats_est= Regression(BaselineType, i, 10000) # baseline with 1000 agents
+    stats_est= Regression(TransShockType, i, 15000) # baseline with 1000 agents
     D_sd_psi_time.append(stats_est['diff_sd_psi']) 
     D_sd_theta_time.append(stats_est['diff_sd_theta'])
 
@@ -333,7 +369,7 @@ D_sd_psi_agents = []
 D_sd_theta_agents = []
 
 for i in A:
-    stats_est= Regression(BaselineType, 5, i) # baseline with 5 periods
+    stats_est= Regression(TransShockType, 3, i) # baseline with 3 periods
     D_sd_psi_agents.append(stats_est['diff_sd_psi']) 
     D_sd_theta_agents.append(stats_est['diff_sd_theta'])
 
@@ -341,25 +377,25 @@ for i in A:
 # let's plot them
 # persistent and time
 plt.plot(T,D_sd_psi_time,'--k')
-plt.title('Sigma Psi Difference for AgentCount = 10000')
+plt.title('Sigma Psi Difference for AgentCount = 15000')
 plt.xlabel('Time Periods')
 plt.ylabel('Difference to true value')
 plt.show(block=False)
 
 plt.plot(T,D_sd_theta_time,'--k')
-plt.title('Sigma Theta Difference for AgentCount = 10000')
+plt.title('Sigma Theta Difference for AgentCount = 15000')
 plt.xlabel('Time Periods')
 plt.ylabel('Difference to true value')
 plt.show(block=False)
 
 plt.plot(A,D_sd_psi_agents,'--k')
-plt.title('Sigma Psi Difference for Time = 5')
+plt.title('Sigma Psi Difference for Time = 3')
 plt.xlabel('AgentCount')
 plt.ylabel('Difference to true value')
 plt.show(block=False)
 
 plt.plot(A,D_sd_theta_agents,'--k')
-plt.title('Sigma Theta Difference for Time = 5')
+plt.title('Sigma Theta Difference for Time = 3')
 plt.xlabel('AgentCount')
 plt.ylabel('Difference to true value')
 plt.show(block=False)
@@ -367,8 +403,4 @@ plt.show(block=False)
 
 # %% [markdown]
 # ### Discussion
-# From this exercise we can see that the regression may be simple, but is very comuputational intensive if we use a larger number of periods and/or agents. Unfortunately, we need a large number of both to receive estimates which are close to the true values. Here, given a sufficient large number of time periods, an increase in the agent count is particularly crucial to reduce the difference between estimated and true parameter.
-
-# %%
-
-# %%
+# By using this simple regression formular, we can estimate the persistent and transitory component of the agents. For this, we only need a small number of periods to get a robust estimate when the number of agents is large. Therefore, given this model is true, we can estimate these parameters having a relatively short panel component!

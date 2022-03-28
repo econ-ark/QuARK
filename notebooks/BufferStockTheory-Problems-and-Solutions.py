@@ -1190,8 +1190,3 @@ plt.xlim(mPlotMin-1, mPlotMax-1)
 plt.ylim(mPlotMin, 1.016)
 
 makeFig('PFGICRawHoldsFHWCFailsRICFails')
-
-# %% [markdown]
-# ### Meep meep
-
-# %%
